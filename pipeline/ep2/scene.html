@@ -148,7 +148,7 @@ function kidHug(o){ // sitting hugging knees
   return g(`translate(${o.x},${o.y}) scale(${s})`,svg);
 }
 function mrFine(o){ // traced from the owner's reference art (crop coords, feet at 262,778)
-  const t=T, S=(o.s||0.9)*0.48, bob=Math.sin(t*2.6)*5;
+  const t=T, S=(o.s||0.9)*0.31, bob=Math.sin(t*2.6)*5;
   const m=o.mouth||0, emo=o.emo||'neutral';
   const OL='#29262F', BONE='#F9F6ED', HOOD='#4A445A', HEM='#38323F', PINK='#E98BAA', PINKD='#D06C8E';
   const W=14;
@@ -207,7 +207,8 @@ function mrFine(o){ // traced from the owner's reference art (crop coords, feet 
     else h+=`<path d="M${x1},396 L${x2},396 Q${x2},${396+depth} 262,${396+depth} Q${x1},${396+depth} ${x1},396 Z" fill="#1F1B26" stroke="${OL}" stroke-width="10" stroke-linejoin="round"/>`+teeth(x1+10,x2-10,397,13);
   } else if(emo==='worried'||emo==='sad'){ h+=`<path d="M214,414 Q262,392 310,414" fill="none" stroke="${OL}" stroke-width="13" stroke-linecap="round"/>`;
   } else if(emo==='serious'){ h+=`<path d="M216,404 L308,404" stroke="${OL}" stroke-width="13" stroke-linecap="round"/>`;
-  } else { h+=`<path d="M210,398 Q262,428 314,398" fill="none" stroke="${OL}" stroke-width="13" stroke-linecap="round"/>`; }
+  } else if(o.smile){ h+=`<path d="M210,398 Q262,428 314,398" fill="none" stroke="${OL}" stroke-width="13" stroke-linecap="round"/>`;
+  } else { h+=`<rect x="200" y="392" width="124" height="28" rx="8" fill="#fff" stroke="${OL}" stroke-width="10"/>`+[1,2,3,4,5].map(i=>`<path d="M${200+124*i/6},393 L${200+124*i/6},419" stroke="${OL}" stroke-width="6"/>`).join(''); }
   const tilt=(o.tilt||0)+(o.shakeHead?Math.sin(t*14)*6:0)+(o.nod?Math.sin(t*10)*3:0);
   sv+=g(`rotate(${tilt},262,440)`,h);
   return g(`translate(${o.x},${o.y+bob*S}) scale(${(o.flip?-1:1)*S},${S}) translate(-262,-778)`,sv);
@@ -301,7 +302,7 @@ function badge(x,y,txt,o={}){ const fs=o.fs||30, padX=18, w=txt.length*fs*0.62+p
   if(sc<=0.01)return '';
   const bg=o.bg||'#F6C945', fg=o.fg||'#2a2018';
   return `<g transform="translate(${x},${y}) scale(${sc}) rotate(${o.rot||0})"><rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx="${h/2.6}" fill="${bg}" stroke="${o.stroke||'#2a2018'}" stroke-width="4"/><text x="0" y="${fs*0.36}" text-anchor="middle" font-size="${fs}" font-weight="800" fill="${fg}">${txt}</text></g>`;}
-function stampX(x,y,r,sc){ if(sc<=0)return '';return `<g transform="translate(${x},${y}) scale(${sc})"><path d="M${-r},${-r} L${r},${r} M${r},${-r} L${-r},${r}" stroke="#fff" stroke-width="24" stroke-linecap="round"/><path d="M${-r},${-r} L${r},${r} M${r},${-r} L${-r},${r}" stroke="#E5383B" stroke-width="15" stroke-linecap="round"/></g>`}
+function stampX(x,y,r,sc){ if(sc<=0)return '';return `<g transform="translate(${x},${y}) scale(${sc})"><path d="M${-r},${-r} L${r},${r} M${r},${-r} L${-r},${r}" stroke="#E5383B" stroke-width="12" stroke-linecap="round"/></g>`}
 function bubble(x,y,w,h,inner,sc){ if(sc<=0)return ''; return `<g transform="translate(${x},${y}) scale(${sc})"><circle cx="${-w/2+20}" cy="${h/2+30}" r="10" fill="#fff" stroke="${OL}" stroke-width="3"/><circle cx="${-w/2+4}" cy="${h/2+52}" r="6" fill="#fff" stroke="${OL}" stroke-width="3"/><rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx="${h/2}" fill="#fff" stroke="${OL}" stroke-width="4"/>${inner}</g>`}
 function icon(kind,x,y,sc){ if(sc<=0)return ''; let s='';
   if(kind==='match') s=matchStick(0,30,0,1,T);
@@ -461,7 +462,7 @@ function scene(t){
     if(ic){over+=`<g transform="translate(700,250)">`+icon('match',-150,0,popS(t,44.1))+(t>44.5?`<text x="-75" y="16" text-anchor="middle" font-size="60" font-weight="800" fill="#fff" stroke="#000" stroke-width="6" paint-order="stroke">+</text>`:'')+icon('curtain',0,0,popS(t,44.8))+(t>45.6?`<text x="80" y="16" text-anchor="middle" font-size="60" font-weight="800" fill="#fff" stroke="#000" stroke-width="6" paint-order="stroke">=</text>`:'')+icon('fire',170,0,popS(t,45.7))+`</g>`}
     if(t>=47.1&&t<51.2) over+=badge(700,250,'&lt; 30 SECONDS',{sc:popS(t,47.2)*(1+0.03*Math.sin(t*8)),fs:48,bg:'#E5383B',fg:'#fff'});
     // Mr Fine walks in from left
-    const wi=A(t,38.4,39.3), fx=mix(-120,175,wi);
+    const wi=A(t,38.4,39.3), fx=mix(-120,150,wi);
     const m=fineMouth();
     let o={x:fx,y:575,s:0.86,mouth:m,walk:t<39.3?(t*2)%1:null,armL:[-8,2],armR:[8,-2],handR:'remote',emo:t<42.4?'happy':t<47?'serious':t<51.3?'shock':t<55.6?'worried':'happy',shakeHead:t>52.6&&t<53.8};
     if(t>=38.5&&t<39.4){o.armL=[-160+Math.sin(t*16)*16,-10]} // wave Hi
@@ -485,7 +486,7 @@ function scene(t){
     gray=k<0.5;
     over+=`<g><path d="M40,40 L60,58 L40,76Z M64,40 L84,58 L64,76Z" fill="#fff" transform="rotate(180,62,58)"/><text x="100" y="70" font-size="30" font-weight="800" fill="#fff">REWIND</text></g>`;
     for(let i=0;i<5;i++){const yy=(i*137+t*900)%608;over+=`<rect x="0" y="${yy}" width="1080" height="${6+i%3*4}" fill="#fff" opacity=".18"/>`}
-    fine={x:175,y:575,s:0.86,armR:[100,40],handR:'remote',press:true,mouth:0,emo:'happy'};
+    fine={x:150,y:575,s:0.86,armR:[100,40],handR:'remote',press:true,mouth:0,emo:'happy'};
     cam={s:1.02,x:540+Math.sin(t*50)*4,y:304};
   }
   // ===== S6 put it back + what-if 59.4-76.4
@@ -504,7 +505,7 @@ function scene(t){
       if(t>=59.4&&t<63.9) over+=badge(760,70,'SAME SATURDAY',{sc:popS(t,59.5),fs:26,bg:'#fff'});
       if(t>=66.0&&t<67.6) over+=badge(760,70,"FIRE IS NOT A TOY",{sc:popS(t,66.0),fs:28});
       if(t>=67.6&&t<69.0) over+=badge(760,70,'IT GROWS FAST',{sc:popS(t,67.6),fs:30,bg:'#E5383B',fg:'#fff'});
-      fine={x:175,y:575,s:0.86,mouth:m,armR:t>66&&t<67.6?[160+Math.sin(t*10)*14,0]:[8,-2],handR:t>66&&t<67.6?'point':'',emo:t<63.9?'neutral':t<64.9?'curious':t<66?'happy':t<67.6?'serious':'worried',nod:t<63.9};
+      fine={x:150,y:575,s:0.86,mouth:m,armR:t>66&&t<67.6?[160+Math.sin(t*10)*14,0]:[8,-2],handR:t>66&&t<67.6?'point':'',emo:t<63.9?'neutral':t<64.9?'curious':t<66?'happy':t<67.6?'serious':'worried',nod:t<63.9};
       cam={s:mix(1.3,1.42,A(t,59.4,66)),x:mix(560,520,A(t,59.4,66)),y:320};
     } else {
       // WHAT IF scene: curtain fire, kid in room
@@ -518,7 +519,7 @@ function scene(t){
       if(t>=70.8&&t<71.8){over+=icon('closet',935,300,1)+stampX(935,300,46,popS(t,70.9));}
       if(t>=71.7&&t<72.6){over+=icon('blanket',760,300,popS(t,71.7))+stampX(760,300,46,popS(t,71.85));}
       if(t>=73.9) over+=`<g transform="translate(700,170) scale(${popS(t,73.95)}) rotate(-8)"><text x="0" y="0" text-anchor="middle" font-size="84" font-weight="800" fill="#FFD23F" stroke="#2a2018" stroke-width="10" paint-order="stroke">FIRE!</text></g>`;
-      fine={x:175,y:575,s:0.86,mouth:m,armR:t>=72.6?[150,10]:[8,-2],emo:t<72.6?'worried':'serious'};
+      fine={x:150,y:575,s:0.86,mouth:m,armR:t>=72.6?[150,10]:[8,-2],emo:t<72.6?'worried':'serious'};
       cam={s:1.28+A(t,69,76.4)*0.08,x:680,y:300};
     }
   }
@@ -541,7 +542,7 @@ function scene(t){
       over+=badge(760,60,'GET OUT',{sc:popS(t,78.4),fs:30});
       if(phone){over+=badge(640,560,'CALL THE FIREFIGHTERS',{sc:popS(t,79.9),fs:28,bg:'#E5383B',fg:'#fff'})+icon('truck',940,430,popS(t,80.2)*0.9)}
     }
-    fine={x:175,y:575,s:0.86,mouth:m,emo:t<79.8?'worried':'happy',armR:t>=79.8?[55,120]:[13,0],handR:t>=80.4?'thumb':''};
+    fine={x:150,y:575,s:0.86,mouth:m,emo:t<79.8?'worried':'happy',armR:t>=79.8?[55,120]:[13,0],handR:t>=80.4?'thumb':''};
     cam={s:t<78.3?1.3:1.08,x:t<78.3?mix(640,760,A(t,76.5,78.3)):640,y:t<78.3?330:304};
   }
   // ===== S8 punchline 81.6-95.9
@@ -559,7 +560,7 @@ function scene(t){
     panel+=person({x:650,y:520,s:0.86,face:kface,mouth:km,flip:true,armR:aR,armL:[12,10],seed:1,blink:blinkAt(t,1)},KID);
     if(t>=82.6&&t<86.6) panel+=`<circle cx="440" cy="136" r="${40+Math.sin(t*6)*3}" fill="none" stroke="#FFD23F" stroke-width="6"/>`;
     const m=fineMouth();
-    let o={x:175,y:575,s:0.86,mouth:m,emo:t<86.9?'curious':'happy'};
+    let o={x:150,y:575,s:0.86,mouth:m,emo:t<86.9?'curious':'happy'};
     if(t>=89.4&&t<91.2){o.armL=[-130,-30]}
     if(t>=91.1&&t<94.6){o.armL=[-130,-30];o.armR=[130,30]}
     if(t>=94.6){o.armR=[55,120];o.handR='thumb';o.thumbDir=1;o.wink=t>94.8&&t<95.6;o.smile=true}
@@ -572,12 +573,12 @@ function scene(t){
     panel+=kitchenRoom({drawer:0,boxOnShelf:true});
     panel+=`<rect x="0" y="0" width="1080" height="608" fill="#1b1622" opacity=".78" transform="scale(2) translate(-270,-150)"/>`;
     const m=fineMouth();
-    let o={x:180,y:575,s:0.95,mouth:m,emo:t<99.3?'serious':t<101.4?'happy':'serious'};
+    let o={x:150,y:575,s:0.95,mouth:m,emo:t<99.3?'serious':t<101.4?'happy':'serious'};
     if(t>=96.3&&t<98.4){o.armR=[120,-10];o.handR='point'}
     if(t>=99.3&&t<101.0){o.armR=[90,10]}
     if(t>=102.2&&t<106.7){o.armR=[120,-10];o.handR='point'}
     fine=o;
-    const rows=[[96.35,"NOT TOYS",'#fff',()=>icon('match',-52,-4,1.05)+icon('lighter',52,6,1.05)+`<g opacity=".88">${stampX(0,0,62,popS(t,96.9))}</g>`],
+    const rows=[[96.35,"NOT TOYS",'#fff',()=>icon('match',-34,-4,.9)+icon('lighter',34,4,.9)+stampX(0,0,38,popS(t,96.9))],
                 [99.35,'GIVE TO AN ADULT','#fff',()=>icon('give',0,0,.8)],
                 [102.26,'GET LOW · GET OUT · STAY OUT','#F6C945',()=>''],
                 [104.98,'CALL THE FIREFIGHTERS','#E5383B',()=>icon('truck',0,0,.6)]];
@@ -587,12 +588,12 @@ function scene(t){
   }
   // ===== S10 end card
   else {
-    panel+=`<rect x="0" y="0" width="1080" height="608" fill="#ECE8E1"/><rect x="0" y="0" width="1080" height="608" fill="url(#dots)"/>`;
-    panel+=`<g opacity="${A(t,106.9,107.2)}"><text x="440" y="250" font-size="112" font-weight="800" fill="#24212B" letter-spacing="-4">MR FINE</text>
-      <text x="444" y="318" font-size="44" font-weight="700" fill="#24212B" opacity="${A(t,107.1,107.4)}">Matches can wait.</text>
-      <g opacity="${A(t,108.3,108.6)}"><text x="444" y="372" font-size="44" font-weight="700" fill="#EC608C">Your life can't.</text></g></g>`;
+    panel+=`<rect x="0" y="0" width="1080" height="608" fill="url(#card)"/>`;
+    panel+=`<g opacity="${A(t,106.9,107.2)}"><text x="740" y="230" text-anchor="middle" font-size="96" font-weight="800" fill="#1f1b24" letter-spacing="-2">MR FINE</text>
+      <text x="740" y="300" text-anchor="middle" font-size="46" font-weight="700" fill="#1f1b24" opacity="${A(t,107.1,107.4)}">Matches can wait.</text>
+      <g transform="translate(740,376) scale(${popS(t,108.3)})"><text x="0" y="0" text-anchor="middle" font-size="62" font-weight="800" fill="#E8648F">YOUR LIFE CAN'T.</text></g></g>`;
     const m=fineMouth();
-    fine={x:260,y:500,s:1.0,mouth:m,armR:[55,120],handR:'thumb',wink:t>108.6&&t<109.8,emo:'happy'};
+    fine={x:300,y:520,s:1.45,mouth:m,armR:t<108.3?[150+Math.sin(t*14)*12,10]:[55,120],handR:t<108.3?'':'thumb',wink:t>108.4,emo:'neutral',smile:t>108.3};
     cam={s:1.0+A(t,106.9,113.4)*0.03,x:540,y:304};
   }
   if(fine) over=mrFine(fine)+over;  // Mr Fine sits in panel space but outside camera zoom
