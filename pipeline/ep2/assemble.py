@@ -2,15 +2,15 @@ import json,subprocess,numpy as np,wave,sys
 sys.path.insert(0,'.')
 from segs import segs
 P={
-'n1':["Saturday.","Parents are out.","You're bored.","In the kitchen drawer, you find a box of matches.","Strike one.","Cool.","Another. Cooler.","You wave it around like a magic wand...","and it touches the curtain."],
-'n2':["Tiny flame.","You panic. And your brain says: if Mom finds out, you're grounded till graduation.","So you throw a blanket on it, shut the door... and hide in your closet."],
-'n3':["It doesn't.","Thirty seconds, the fire hits the ceiling.","One minute,","the room is full of black smoke."],
-'m1':["Hi.","I'm Mr Fine, and I just put you on pause.","Because this is real.","One match. One curtain.","That's all it takes.","A small flame can turn into a major fire in less than thirty seconds.","And hiding?","It doesn't work.","Smoke finds every closet.","So...","let's rewind."],
-'n4':[None,"Same Saturday. Same boredom. Same box of matches.","But this time...","you put it back.","Because fire doesn't play.","It spreads.","And if a fire ever does start:","don't hide,","don't fight it.","Yell fire!"],
-'n5':["Get low under the smoke,","get out, and call the fire department from outside."],
-'m2':["Boring Saturday?","Yes.","House still standing?","Also yes.","Good trade."],
-'m3':["Matches and lighters aren't toys.","Find them?","Give them to an adult.","And if there's a fire:","get low,","get out, stay out,","and call the fire department."],
-'m4':["Boredom passes.","Fire doesn't."],
+'n1':["Saturday.","Parents are out. You're bored. In the kitchen drawer, you find a box of matches.","Strike one.","Cool.","Another.","Cooler.","You wave it around like a magic wand...","and it touches the curtain."],
+'n2':["Tiny flame.","You panic.","And your brain says: if Mom finds out, you're in big trouble.","So you throw a blanket on it,","shut the door...","and hide in your closet."],
+'n3':["It doesn't. Thirty seconds, the fire hits the ceiling.","One minute, the room is full of black smoke."],
+'m1':["Hi. I'm Mr Fine,","and I just put you on pause.","Because this is real.","One match. One curtain. That's all it takes.","A small flame can turn into a big fire in less than thirty seconds.","And hiding?","It doesn't work.","Smoke finds every closet. So...","let's rewind."],
+'n4':["Same Saturday. Same boredom.","Same box of matches.","But this time... you put it back.","Because fire is not a toy.","It grows fast.","And if a fire ever does start:","don't hide,","don't fight it.","Yell fire!"],
+'n5':["Get low under the smoke,","get out,","and call the firefighters from outside."],
+'m2':["Boring Saturday?","Yes.","House still standing?","Also yes.","Worth it."],
+'m3':["Matches and lighters are not toys.","Find them? Give them to an adult.","And if there's a fire:","get low,","get out,","stay out,","and call the firefighters."],
+'m4':["Matches can wait.","Your life can't."],
 'y1':["It'll go out.","It'll go out..."],'y2':["Fire!","FIRE!"],'y3':["I learned something today."],
 'mom':["Why","are the matches","on the top shelf?"]}
 SPK={'n':'nar','m':'fine','y':'kid','mo':'mom'}

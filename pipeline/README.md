@@ -1,8 +1,8 @@
 # Mr Fine production pipeline (rebuilt 7 Nov 2026)
 
 Per episode folder (see ep2/):
-1. Voice: Speko audio_synthesize, google-tts `gemini-3.8-flash-lite-tts`.
-   Narrator + Mr Fine = voice `Puck`, instructions "Lively TikTok-style narrator, wide intonation, medium unhurried pace".
+1. Voice: Speko audio_synthesize, google-tts `gemini-3.8-flash-lite-tts`, voice Puck, NO instructions field (closest match to the Ep1 reference voice; instructions made it sound different).
+   Mr Fine IS the narrator: his mouth moves on every narrator line while he is on screen.
    Kid = `Zephyr` (instructed as 11-year-old boy), Mom = `Kore`. One clip per beat -> audio/*.wav.
 2. `assemble.py`: phrase list per clip (must match silence segments from segs.py), places clips on a timeline,
    writes timeline.json (karaoke captions + speaker) and voice.wav. Then build timeline.js (envelopes for lip-sync).
