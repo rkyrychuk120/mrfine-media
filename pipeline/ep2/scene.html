@@ -147,71 +147,70 @@ function kidHug(o){ // sitting hugging knees
   svg+=g(`translate(0,${40-cough*8}) rotate(${-cough*6})`,head({face:o.face||'scared',lookX:o.lookX||4,mouth:o.mouth||0,blink:o.blink,sweat:1},st));
   return g(`translate(${o.x},${o.y}) scale(${s})`,svg);
 }
-function mrFine(o){ // origin feet. Redrawn to match Episode 1 design.
-  const t=T,s=o.s||0.9,bob=Math.sin(t*2.6)*2.5;
-  const mouthAmt=o.mouth||0, emo=o.emo||'neutral';
-  const bone='#EEEAEA', hood='#2D2A3B', ol='#221E2A';
-  const aL=o.armL||[-8,2], aR=o.armR||[8,-2];
-  const armF=(sx,a)=>{const r=Math.PI/180;const ex=sx+Math.sin(a[0]*r)*42,ey=-158+Math.cos(a[0]*r)*42,hx=ex+Math.sin((a[0]+a[1])*r)*38,hy=ey+Math.cos((a[0]+a[1])*r)*38;const p=`M${sx},-158 L${ex},${ey} L${hx},${hy}`;
-    return {s:`<path d="${p}" fill="none" stroke="${ol}" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/><path d="${p}" fill="none" stroke="${hood}" stroke-width="29" stroke-linecap="round" stroke-linejoin="round"/>`,hx,hy}};
-  const L_=armF(-56,aL), R_=armF(56,aR);
+function mrFine(o){ // traced from the owner's reference art (crop coords, feet at 262,778)
+  const t=T, S=(o.s||0.9)*0.48, bob=Math.sin(t*2.6)*5;
+  const m=o.mouth||0, emo=o.emo||'neutral';
+  const OL='#29262F', BONE='#F9F6ED', HOOD='#4A445A', HEM='#38323F', PINK='#E98BAA', PINKD='#D06C8E';
+  const W=14;
+  const aL=o.armL||[-13,0], aR=o.armR||[13,0];
+  const armF=(sx,a)=>{const r=Math.PI/180;const sy=470;const ex=sx+Math.sin(a[0]*r)*92,ey=sy+Math.cos(a[0]*r)*92,hx=ex+Math.sin((a[0]+a[1])*r)*88,hy=ey+Math.cos((a[0]+a[1])*r)*88;const p=`M${sx},${sy} L${ex},${ey} L${hx},${hy}`;
+    return {s:`<path d="${p}" fill="none" stroke="${OL}" stroke-width="${58+W*2}" stroke-linecap="round" stroke-linejoin="round"/><path d="${p}" fill="none" stroke="${HOOD}" stroke-width="58" stroke-linecap="round" stroke-linejoin="round"/>`,hx,hy,ang:a[0]+a[1]}};
+  const L_=armF(122,aL), R_=armF(402,aR);
   const hand=(h,kind,side)=>{
-    const base=`<circle cx="0" cy="0" r="20" fill="${bone}" stroke="${ol}" stroke-width="5"/>`;
-    if(kind==='thumb') return `<g transform="translate(${h.hx},${h.hy})"><rect x="-17" y="-15" width="34" height="30" rx="13" fill="${bone}" stroke="${ol}" stroke-width="5"/><rect x="${side>0?4:-18}" y="-38" width="14" height="28" rx="7" fill="${bone}" stroke="${ol}" stroke-width="5"/></g>`;
-    if(kind==='point') return `<g transform="translate(${h.hx},${h.hy})">${base}<rect x="-6" y="-40" width="12" height="28" rx="6" fill="${bone}" stroke="${ol}" stroke-width="5"/></g>`;
-    if(kind==='remote') return `<g transform="translate(${h.hx},${h.hy}) rotate(-15)"><rect x="-13" y="-50" width="26" height="54" rx="7" fill="#26232c" stroke="${ol}" stroke-width="3.5"/><circle cx="0" cy="-39" r="6" fill="${o.press?'#ff7b7b':'#E2463A'}"/><rect x="-7" y="-26" width="14" height="4" fill="#888"/><rect x="-7" y="-18" width="14" height="4" fill="#888"/>${base}</g>`;
-    return `<g transform="translate(${h.hx},${h.hy})">${base}</g>`;
+    if(kind==='thumb') return `<g transform="translate(${h.hx},${h.hy}) scale(${side},1)"><rect x="-34" y="-30" width="68" height="62" rx="26" fill="${BONE}" stroke="${OL}" stroke-width="${W}"/><rect x="-8" y="-86" width="32" height="64" rx="16" fill="${BONE}" stroke="${OL}" stroke-width="${W}"/></g>`;
+    if(kind==='point') return `<g transform="translate(${h.hx},${h.hy})"><rect x="-13" y="-86" width="26" height="60" rx="13" fill="${BONE}" stroke="${OL}" stroke-width="${W}"/><circle r="38" fill="${BONE}" stroke="${OL}" stroke-width="${W}"/></g>`;
+    if(kind==='remote') return `<g transform="translate(${h.hx},${h.hy}) rotate(-15)"><rect x="-28" y="-112" width="56" height="116" rx="14" fill="#26232c" stroke="${OL}" stroke-width="8"/><circle cx="0" cy="-88" r="13" fill="${o.press?'#ff7b7b':'#E2463A'}"/><rect x="-15" y="-62" width="30" height="8" fill="#888"/><rect x="-15" y="-46" width="30" height="8" fill="#888"/><circle r="38" fill="${BONE}" stroke="${OL}" stroke-width="${W}"/></g>`;
+    return `<circle cx="${h.hx}" cy="${h.hy}" r="38" fill="${BONE}" stroke="${OL}" stroke-width="${W}"/>`;
   };
-  let sv=`<ellipse cx="0" cy="-2" rx="78" ry="11" fill="#000" opacity=".18"/>`;
-  // legs + feet
-  [-25,25].forEach((lx,i)=>{const sw=o.walk!=null?Math.sin(o.walk*Math.PI*2+i*Math.PI)*12:0;
-    sv+=`<rect x="${lx-10+sw*0.5}" y="-56" width="20" height="44" fill="${bone}" stroke="${ol}" stroke-width="5"/><ellipse cx="${lx+sw+(i?5:-5)}" cy="-13" rx="31" ry="15" fill="${bone}" stroke="${ol}" stroke-width="5"/>`});
+  let sv=`<ellipse cx="262" cy="772" rx="175" ry="22" fill="#000" opacity=".16"/>`;
+  // legs & feet
+  [[200,195],[315,340]].forEach(([lx,fx],i)=>{const sw=o.walk!=null?Math.sin(o.walk*Math.PI*2+i*Math.PI)*22:0;
+    sv+=`<rect x="${lx-17+sw*0.4}" y="650" width="34" height="80" fill="${BONE}" stroke="${OL}" stroke-width="${W}"/><ellipse cx="${fx+sw}" cy="742" rx="58" ry="31" fill="${BONE}" stroke="${OL}" stroke-width="${W}"/>`});
   // shorts
-  sv+=`<rect x="-62" y="-80" width="124" height="30" rx="8" fill="#E98BAA" stroke="${ol}" stroke-width="5"/><rect x="-58" y="-62" width="116" height="9" fill="#D06C8E"/><path d="M0,-78 L0,-52" stroke="${ol}" stroke-width="4"/>`;
-  
-  // hoodie body (trapezoid, rounded)
-  sv+=`<path d="M-60,-178 Q-66,-178 -68,-170 L-80,-86 Q-82,-72 -68,-72 L68,-72 Q82,-72 80,-86 L68,-170 Q66,-178 60,-178 Z" fill="${hood}" stroke="${ol}" stroke-width="5"/>`;
-  sv+=`<path d="M-48,-92 L48,-92" stroke="#1d1a27" stroke-width="5" stroke-linecap="round"/>`;
-  sv+=`<path d="M-12,-176 L-12,-160 M12,-176 L12,-160" stroke="#d9d4dc" stroke-width="3"/><circle cx="-12" cy="-157" r="4" fill="#d9d4dc"/><circle cx="12" cy="-157" r="4" fill="#d9d4dc"/>`;
-  // brain emblem (cloud)
-  sv+=`<g transform="translate(0,-126)"><path d="M-30,6 C-40,4 -40,-12 -28,-14 C-30,-28 -12,-30 -6,-22 C0,-32 18,-30 18,-18 C32,-22 38,-6 28,0 C38,8 30,22 18,18 C14,28 -4,28 -6,20 C-14,28 -30,24 -28,14 C-36,14 -38,8 -30,6Z" fill="#F29BBA" stroke="#B9577C" stroke-width="3.5"/><path d="M0,-20 C-4,-8 4,0 0,18 M-22,-4 C-14,-2 -12,6 -18,10 M20,-6 C12,-2 12,6 20,10" stroke="#C9678C" stroke-width="2.6" fill="none" stroke-linecap="round"/><ellipse cx="-12" cy="-14" rx="5" ry="3" fill="#fff" opacity=".55"/></g>`;
+  sv+=`<path d="M128,600 L396,600 L398,652 Q398,668 382,668 L142,668 Q126,668 126,652 Z" fill="${PINK}" stroke="${OL}" stroke-width="${W}" stroke-linejoin="round"/><rect x="150" y="630" width="95" height="12" rx="4" fill="${PINKD}"/><rect x="280" y="630" width="95" height="12" rx="4" fill="${PINKD}"/><path d="M262,604 L262,666" stroke="${OL}" stroke-width="10"/>`;
+  sv+=L_.s;
+  // hoodie
+  sv+=`<path d="M150,440 Q112,446 108,500 L104,592 Q104,620 132,620 L392,620 Q420,620 420,592 L416,500 Q412,446 374,440 Z" fill="${HOOD}" stroke="${OL}" stroke-width="${W}" stroke-linejoin="round"/>`;
+  sv+=`<path d="M112,578 L412,578 L414,600 Q414,616 396,616 L128,616 Q110,616 110,600 Z" fill="${HEM}"/>`;
+  sv+=`<rect x="218" y="452" width="16" height="22" rx="5" fill="#E6E1E8"/><rect x="290" y="452" width="16" height="22" rx="5" fill="#E6E1E8"/>`;
+  // brain
+  sv+=`<g transform="translate(262,535)"><path d="M-62,10 C-78,6 -76,-24 -56,-28 C-58,-50 -28,-56 -16,-42 C-6,-58 22,-56 26,-38 C48,-46 62,-22 50,-8 C68,4 58,34 36,30 C30,48 2,48 -4,34 C-18,48 -48,42 -46,24 C-62,26 -70,16 -62,10Z" fill="#F29BB2" stroke="#D2708B" stroke-width="5"/><path d="M0,-40 C-8,-14 8,6 0,38 M-40,-10 C-26,-6 -24,8 -34,14 M38,-14 C24,-8 24,6 36,12 M-22,-30 q8,6 2,14 M20,-30 q-8,6 -2,14" stroke="#D2708B" stroke-width="5" fill="none" stroke-linecap="round"/><ellipse cx="-30" cy="-28" rx="8" ry="5" fill="#fff" opacity=".7"/></g>`;
   sv+=R_.s+hand(L_,o.handL,-1)+hand(R_,o.handR,1);
   // head
-  let h0=`<path d="M-100,-262 C-100,-360 100,-360 100,-262 C100,-214 86,-186 62,-170 Q48,-161 32,-161 L-32,-161 Q-48,-161 -62,-170 C-86,-186 -100,-214 -100,-262Z" fill="${bone}" stroke="${ol}" stroke-width="5.5"/>`;
-  let h=h0;
-  h+=`<path d="M30,-330 L44,-314 L32,-304" fill="none" stroke="${ol}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`;
-  // eyes
+  let h=`<path d="M136,350 C40,320 26,210 50,160 C86,62 180,30 262,30 C344,30 438,62 474,160 C498,210 484,320 388,350 L392,430 Q392,466 356,466 L168,466 Q132,466 132,430 Z" fill="${BONE}" stroke="${OL}" stroke-width="${W}" stroke-linejoin="round"/>`;
+  h+=`<path d="M340,55 L322,104 L348,126" fill="none" stroke="${OL}" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>`;
   const blink=blinkAt(t,7)||o.blink;
-  const E=(ex,isR)=>{
+  const eye=(cx,isR)=>{
     const wink=isR&&o.wink;
-    if(blink||wink) return `<path d="M${ex-20},-256 Q${ex},-242 ${ex+20},-256" fill="none" stroke="${ol}" stroke-width="6" stroke-linecap="round"/>`;
-    if(emo==='happy') return `<path d="M${ex-22},-250 Q${ex},-276 ${ex+22},-250" fill="none" stroke="${ol}" stroke-width="7" stroke-linecap="round"/>`;
-    const r=emo==='shock'?33:29.5, hr=emo==='shock'?7.5:10;
-    let e=`<circle cx="${ex}" cy="-258" r="${r}" fill="#1a1622"/><circle cx="${ex+7}" cy="-268" r="${hr}" fill="#fff"/>`;
-    if(emo==='worried'||emo==='sad') e+=`<path d="M${ex-34},-${isR?279:291} L${ex+34},-${isR?291:279} L${ex+34},-300 L${ex-34},-300Z" fill="${bone}"/><path d="M${ex-30},-${isR?280:290} L${ex+30},-${isR?290:280}" stroke="${ol}" stroke-width="5" stroke-linecap="round"/>`;
-    if(emo==='serious') e+=`<path d="M${ex-34},-${isR?287:280} L${ex+34},-${isR?280:287} L${ex+34},-300 L${ex-34},-300Z" fill="${bone}"/><path d="M${ex-30},-${isR?286:281} L${ex+30},-${isR?281:286}" stroke="${ol}" stroke-width="5" stroke-linecap="round"/>`;
-    if(emo==='curious'&&isR) e+=`<path d="M${ex-26},-298 Q${ex},-310 ${ex+26},-298" fill="none" stroke="${ol}" stroke-width="5" stroke-linecap="round"/>`;
-    return e;
+    if(blink||wink||emo==='happy') return `<path d="M${cx-38},252 Q${cx},204 ${cx+38},252" fill="none" stroke="${OL}" stroke-width="16" stroke-linecap="round"/>`;
+    const r=emo==='shock'?56:48;
+    return `<circle cx="${cx}" cy="242" r="${r}" fill="#1F1B26"/><circle cx="${cx+15}" cy="${242-17}" r="${emo==='shock'?13:17}" fill="#fff"/><circle cx="${cx-14}" cy="258" r="6" fill="#fff" opacity=".8"/>`;
   };
-  h+=E(-42,false)+E(42,true);
-  h+=`<path d="M-8,-226 L8,-226 L0,-215 Z" fill="${ol}"/>`;
-  h+=`<ellipse cx="-70" cy="-224" rx="17" ry="9" fill="#E9A3B2" opacity=".75"/><ellipse cx="70" cy="-224" rx="17" ry="9" fill="#E9A3B2" opacity=".75"/>`;
-  // mouth by emotion + lip-sync
-  const m=mouthAmt;
-  if(m>0.07){
-    if(emo==='happy'||emo==='proud') h+=`<path d="M${-14-m*4},-198 Q0,${-198+12+m*14} ${14+m*4},-198 Z" fill="#4a2333" stroke="${ol}" stroke-width="4" stroke-linejoin="round"/>`;
-    else h+=`<ellipse cx="0" cy="-194" rx="${9+m*6}" ry="${3+m*11}" fill="#4a2333" stroke="${ol}" stroke-width="4"/>`;
-  } else {
-    if(emo==='happy'||emo==='proud'||o.smile) h+=`<path d="M-18,-200 Q0,-184 18,-200" fill="none" stroke="${ol}" stroke-width="5" stroke-linecap="round"/>`;
-    else if(emo==='shock') h+=`<ellipse cx="0" cy="-192" rx="9" ry="12" fill="#1a1622"/>`;
-    else if(emo==='worried'||emo==='sad') h+=`<path d="M-14,-188 Q0,-198 14,-188" fill="none" stroke="${ol}" stroke-width="5" stroke-linecap="round"/>`;
-    else if(emo==='serious') h+=`<path d="M-14,-193 L14,-193" stroke="${ol}" stroke-width="5" stroke-linecap="round"/>`;
-    else h+=`<path d="M-14,-194 Q0,-188 14,-194" fill="none" stroke="${ol}" stroke-width="5" stroke-linecap="round"/>`;
-  }
-  if(emo==='sweat') {}
+  h+=eye(178,false)+eye(346,true);
+  // brows per emotion
+  const brow=(x1,y1,x2,y2)=>`<path d="M${x1},${y1} L${x2},${y2}" stroke="${OL}" stroke-width="14" stroke-linecap="round"/>`;
+  if(emo==='worried'||emo==='sad'||emo==='sheepish') h+=brow(132,192,208,172)+brow(316,172,392,192);
+  else if(emo==='serious') h+=brow(132,170,208,186)+brow(316,186,392,170);
+  else if(emo==='curious') h+=brow(136,176,210,176)+`<path d="M312,170 Q352,140 392,166" fill="none" stroke="${OL}" stroke-width="14" stroke-linecap="round"/>`;
+  else if(emo==='shock') h+=brow(136,160,206,150)+brow(318,150,388,160);
+  else if(emo==='happy') h+=brow(134,184,208,172)+brow(316,172,390,184);
+  if(o.sweat||emo==='worried') h+=`<path d="M430,120 C444,146 452,160 440,174 C428,186 406,178 408,160 C410,146 424,134 430,120Z" fill="#8CC8EE" stroke="${OL}" stroke-width="8"/><path d="M422,158 q-2,10 6,14" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round"/>`;
+  // nose + blush
+  h+=`<path d="M246,314 L278,314 L262,340 Z" fill="${OL}"/>`;
+  h+=`<circle cx="112" cy="310" r="40" fill="#D9CBBD" opacity=".55"/><ellipse cx="122" cy="318" rx="34" ry="13" fill="#EFA0AE" opacity=".85"/><circle cx="412" cy="310" r="40" fill="#D9CBBD" opacity=".55"/><ellipse cx="402" cy="318" rx="34" ry="13" fill="#EFA0AE" opacity=".85"/>`;
+  // mouth (jaw with teeth)
+  const teeth=(x1,x2,y,hgt)=>{let tt=`<rect x="${x1}" y="${y}" width="${x2-x1}" height="${hgt}" fill="#fff"/>`;const n=6;for(let i=1;i<n;i++){const xx=x1+(x2-x1)*i/n;tt+=`<path d="M${xx},${y} L${xx},${y+hgt}" stroke="${OL}" stroke-width="6"/>`}return tt};
+  const open=Math.max(m, (emo==='happy'||emo==='proud')?0.35:0);
+  if(open>0.07 || emo==='shock'){
+    const depth=emo==='shock'?60:16+open*46, x1=emo==='shock'?222:176, x2=emo==='shock'?302:348;
+    if(emo==='shock') h+=`<ellipse cx="262" cy="410" rx="34" ry="${26+m*14}" fill="#1F1B26"/>`;
+    else h+=`<path d="M${x1},396 L${x2},396 Q${x2},${396+depth} 262,${396+depth} Q${x1},${396+depth} ${x1},396 Z" fill="#1F1B26" stroke="${OL}" stroke-width="10" stroke-linejoin="round"/>`+teeth(x1+10,x2-10,397,13);
+  } else if(emo==='worried'||emo==='sad'){ h+=`<path d="M214,414 Q262,392 310,414" fill="none" stroke="${OL}" stroke-width="13" stroke-linecap="round"/>`;
+  } else if(emo==='serious'){ h+=`<path d="M216,404 L308,404" stroke="${OL}" stroke-width="13" stroke-linecap="round"/>`;
+  } else { h+=`<path d="M210,398 Q262,428 314,398" fill="none" stroke="${OL}" stroke-width="13" stroke-linecap="round"/>`; }
   const tilt=(o.tilt||0)+(o.shakeHead?Math.sin(t*14)*6:0)+(o.nod?Math.sin(t*10)*3:0);
-  sv+=g(`rotate(${tilt},0,-170) translate(0,-170) scale(1.08) translate(0,170)`,h);
-  return g(`translate(${o.x},${o.y}) scale(${(o.flip?-1:1)*s},${s}) translate(0,${bob})`,sv);
+  sv+=g(`rotate(${tilt},262,440)`,h);
+  return g(`translate(${o.x},${o.y+bob*S}) scale(${(o.flip?-1:1)*S},${S}) translate(-262,-778)`,sv);
 }
 // ---------- rooms ----------
 function kitchenRoom(o){
@@ -302,7 +301,7 @@ function badge(x,y,txt,o={}){ const fs=o.fs||30, padX=18, w=txt.length*fs*0.62+p
   if(sc<=0.01)return '';
   const bg=o.bg||'#F6C945', fg=o.fg||'#2a2018';
   return `<g transform="translate(${x},${y}) scale(${sc}) rotate(${o.rot||0})"><rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx="${h/2.6}" fill="${bg}" stroke="${o.stroke||'#2a2018'}" stroke-width="4"/><text x="0" y="${fs*0.36}" text-anchor="middle" font-size="${fs}" font-weight="800" fill="${fg}">${txt}</text></g>`;}
-function stampX(x,y,r,sc){ if(sc<=0)return '';return `<g transform="translate(${x},${y}) scale(${sc})"><path d="M${-r},${-r} L${r},${r} M${r},${-r} L${-r},${r}" stroke="#fff" stroke-width="30" stroke-linecap="round"/><path d="M${-r},${-r} L${r},${r} M${r},${-r} L${-r},${r}" stroke="#E5383B" stroke-width="20" stroke-linecap="round"/></g>`}
+function stampX(x,y,r,sc){ if(sc<=0)return '';return `<g transform="translate(${x},${y}) scale(${sc})"><path d="M${-r},${-r} L${r},${r} M${r},${-r} L${-r},${r}" stroke="#fff" stroke-width="24" stroke-linecap="round"/><path d="M${-r},${-r} L${r},${r} M${r},${-r} L${-r},${r}" stroke="#E5383B" stroke-width="15" stroke-linecap="round"/></g>`}
 function bubble(x,y,w,h,inner,sc){ if(sc<=0)return ''; return `<g transform="translate(${x},${y}) scale(${sc})"><circle cx="${-w/2+20}" cy="${h/2+30}" r="10" fill="#fff" stroke="${OL}" stroke-width="3"/><circle cx="${-w/2+4}" cy="${h/2+52}" r="6" fill="#fff" stroke="${OL}" stroke-width="3"/><rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx="${h/2}" fill="#fff" stroke="${OL}" stroke-width="4"/>${inner}</g>`}
 function icon(kind,x,y,sc){ if(sc<=0)return ''; let s='';
   if(kind==='match') s=matchStick(0,30,0,1,T);
@@ -313,12 +312,13 @@ function icon(kind,x,y,sc){ if(sc<=0)return ''; let s='';
   if(kind==='phone') s=`<rect x="-24" y="-44" width="48" height="88" rx="10" fill="#26232c" stroke="${OL}" stroke-width="4"/><rect x="-18" y="-34" width="36" height="62" rx="4" fill="#E5383B"/><path d="M-12,-8 L-6,-16 L4,-10 L10,-16 L12,8 L-12,8Z" fill="#fff"/>`;
   if(kind==='lighter') s=`<rect x="-16" y="-30" width="32" height="64" rx="8" fill="#4AA3DF" stroke="${OL}" stroke-width="4"/><rect x="-10" y="-42" width="20" height="14" rx="3" fill="#bbb" stroke="${OL}" stroke-width="3"/>`;
   if(kind==='hand') s=`<path d="M-40,10 C-20,0 0,-4 20,-2 L40,-10 L44,4 L22,14 C0,24 -20,24 -40,22Z" fill="#E8B48A" stroke="${OL}" stroke-width="4"/>`+matchBox(10,-24,0,0,.6);
+  if(kind==='give') s=matchBox(-70,0,0,0,1)+`<path d="M-30,0 L22,0 M10,-12 L24,0 L10,12" stroke="#fff" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`+g('translate(70,128) scale(.55)',head({face:'happy'},MOM));
   if(kind==='truck') s=`<rect x="-60" y="-26" width="90" height="44" rx="6" fill="#E5383B" stroke="${OL}" stroke-width="4"/><rect x="30" y="-14" width="34" height="32" rx="5" fill="#E5383B" stroke="${OL}" stroke-width="4"/><rect x="38" y="-8" width="18" height="12" fill="#9FD3F0"/><circle cx="-36" cy="22" r="12" fill="#333" stroke="${OL}" stroke-width="3"/><circle cx="38" cy="22" r="12" fill="#333" stroke="${OL}" stroke-width="3"/><path d="M-56,-34 L20,-34" stroke="#ddd" stroke-width="6"/>`;
-  if(kind==='grounded') s=`<rect x="-70" y="-22" width="140" height="44" rx="6" fill="none" stroke="#E5383B" stroke-width="6" transform="rotate(-10)"/><text x="0" y="12" text-anchor="middle" font-size="30" font-weight="800" fill="#E5383B" transform="rotate(-10)">BIG TROUBLE</text>`;
+  if(kind==='grounded') s=`<rect x="-122" y="-28" width="244" height="56" rx="6" fill="none" stroke="#E5383B" stroke-width="6" transform="rotate(-10)"/><text x="0" y="12" text-anchor="middle" font-size="32" font-weight="800" fill="#E5383B" transform="rotate(-10)">BIG TROUBLE!</text>`;
   if(kind==='cap') s=`<path d="M-44,0 L0,-20 L44,0 L0,20Z" fill="#26232c" stroke="${OL}" stroke-width="3"/><rect x="-24" y="4" width="48" height="20" fill="#26232c"/><path d="M30,6 L30,28" stroke="#F6C945" stroke-width="4"/>`;
   return `<g transform="translate(${x},${y}) scale(${sc})">${s}</g>`;
 }
-function momAngryFace(){return g('translate(-60,8) scale(.42)',head({face:'suspicious'},MOM))}
+function momAngryFace(){return g('translate(-95,112) scale(.5)',head({face:'suspicious'},MOM))}
 
 // ---------- captions ----------
 const CAPC={nar:{cur:'#FFD84A',past:'#FFFFFF',fut:'#9C9AA2'},fine:{cur:'#FFB3CF',past:'#F07FA8',fut:'#9A6A7E'},kid:{cur:'#BFD7FF',past:'#7FAEF5',fut:'#5F7398'},mom:{cur:'#FFD27A',past:'#E5A84A',fut:'#8E7448'}};
@@ -340,6 +340,7 @@ const DEFS=`<defs>
 <filter id="gray"><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncR type="linear" slope="1.05" intercept="-0.02"/><feFuncG type="linear" slope="1.05" intercept="-0.02"/><feFuncB type="linear" slope="1.05" intercept="-0.02"/></feComponentTransfer></filter>
 <filter id="soft"><feGaussianBlur stdDeviation="1.1"/></filter>
 <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="2" fill="#000" opacity=".18"/></pattern>
+<pattern id="dots" width="41" height="41" patternUnits="userSpaceOnUse" x="12" y="8"><circle cx="20" cy="20" r="3.2" fill="#D9D3CA"/></pattern>
 <linearGradient id="card" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F1ECE6"/><stop offset="1" stop-color="#E2DCD3"/></linearGradient>
 </defs>`;
 
@@ -412,7 +413,7 @@ function scene(t){
     if(blanket && t<25.4 && t>=23.0) {}
     // thought bubble
     const bs=S(17.0,21.9)?popS(t,17.0)*(1-A(t,21.5,21.9)):0;
-    over+=bubble(330,215,300,170,momAngryFace()+icon('grounded',80,-20,popS(t,18.4)*0.9)+icon('cap',90,46,popS(t,20.2)*0.8),bs);
+    over+=bubble(360,205,400,190,momAngryFace()+icon('grounded',75,0,popS(t,18.4)*0.95),bs);
     cam={s:mix(1.7,1.45,A(t,15.4,16.6))+A(t,16.6,21.8)*0.07,x:mix(720,610,A(t,15.4,17)),y:mix(320,300,A(t,15.4,17))};
     if(t>=21.8) cam={s:mix(1.52,1.2,A(t,21.8,23.4)),x:mix(610,760,A(t,22,25)),y:300};
   }
@@ -540,7 +541,7 @@ function scene(t){
       over+=badge(760,60,'GET OUT',{sc:popS(t,78.4),fs:30});
       if(phone){over+=badge(640,560,'CALL THE FIREFIGHTERS',{sc:popS(t,79.9),fs:28,bg:'#E5383B',fg:'#fff'})+icon('truck',940,430,popS(t,80.2)*0.9)}
     }
-    fine={x:175,y:575,s:0.86,mouth:m,emo:t<79.8?'worried':'happy',armR:t>=79.8?[120,60]:[8,-2],handR:t>=80.4?'thumb':''};
+    fine={x:175,y:575,s:0.86,mouth:m,emo:t<79.8?'worried':'happy',armR:t>=79.8?[55,120]:[13,0],handR:t>=80.4?'thumb':''};
     cam={s:t<78.3?1.3:1.08,x:t<78.3?mix(640,760,A(t,76.5,78.3)):640,y:t<78.3?330:304};
   }
   // ===== S8 punchline 81.6-95.9
@@ -561,7 +562,7 @@ function scene(t){
     let o={x:175,y:575,s:0.86,mouth:m,emo:t<86.9?'curious':'happy'};
     if(t>=89.4&&t<91.2){o.armL=[-130,-30]}
     if(t>=91.1&&t<94.6){o.armL=[-130,-30];o.armR=[130,30]}
-    if(t>=94.6){o.armR=[120,60];o.handR='thumb';o.thumbDir=1;o.wink=t>94.8&&t<95.6;o.smile=true}
+    if(t>=94.6){o.armR=[55,120];o.handR='thumb';o.thumbDir=1;o.wink=t>94.8&&t<95.6;o.smile=true}
     fine=o;
     if(t>=89.4&&t<95.8){ over+=badge(460,60,'BORING SATURDAY? ✓',{sc:popS(t,89.5),fs:26,bg:'#fff'}); if(t>=91.0) over+=badge(800,60,'HOUSE STANDING? ✓',{sc:popS(t,91.1),fs:26,bg:'#fff'}); }
     cam={s:1.25+A(t,81.6,95.9)*0.06,x:mix(720,660,A(t,81.6,89)),y:300};
@@ -576,8 +577,8 @@ function scene(t){
     if(t>=99.3&&t<101.0){o.armR=[90,10]}
     if(t>=102.2&&t<106.7){o.armR=[120,-10];o.handR='point'}
     fine=o;
-    const rows=[[96.35,"NOT TOYS",'#fff',()=>icon('match',-36,-6,.85)+icon('lighter',34,4,.85)+stampX(46,-28,22,popS(t,96.9))],
-                [99.35,'GIVE TO AN ADULT','#fff',()=>icon('hand',0,0,.8)],
+    const rows=[[96.35,"NOT TOYS",'#fff',()=>icon('match',-52,-4,1.05)+icon('lighter',52,6,1.05)+`<g opacity=".88">${stampX(0,0,62,popS(t,96.9))}</g>`],
+                [99.35,'GIVE TO AN ADULT','#fff',()=>icon('give',0,0,.8)],
                 [102.26,'GET LOW · GET OUT · STAY OUT','#F6C945',()=>''],
                 [104.98,'CALL THE FIREFIGHTERS','#E5383B',()=>icon('truck',0,0,.6)]];
     rows.forEach(([ts,txt,bg,ic],i)=>{ if(t<ts) return; const sc=popS(t,ts); const y=95+i*138;
@@ -586,13 +587,12 @@ function scene(t){
   }
   // ===== S10 end card
   else {
-    panel+=`<rect x="0" y="0" width="1080" height="608" fill="url(#card)"/>`;
-    const k=popS(t,107.0);
-    panel+=`<g opacity="${A(t,106.9,107.2)}"><text x="700" y="220" text-anchor="middle" font-size="88" font-weight="800" fill="#1f1b24">MR FINE</text>
-      <text x="700" y="296" text-anchor="middle" font-size="44" font-weight="700" fill="#1f1b24" opacity="${A(t,107.1,107.4)}">Matches can wait.</text>
-      <g transform="translate(700,380) scale(${popS(t,108.4)})"><text x="0" y="0" text-anchor="middle" font-size="64" font-weight="800" fill="#E8648F">YOUR LIFE CAN'T.</text></g></g>`;
+    panel+=`<rect x="0" y="0" width="1080" height="608" fill="#ECE8E1"/><rect x="0" y="0" width="1080" height="608" fill="url(#dots)"/>`;
+    panel+=`<g opacity="${A(t,106.9,107.2)}"><text x="440" y="250" font-size="112" font-weight="800" fill="#24212B" letter-spacing="-4">MR FINE</text>
+      <text x="444" y="318" font-size="44" font-weight="700" fill="#24212B" opacity="${A(t,107.1,107.4)}">Matches can wait.</text>
+      <g opacity="${A(t,108.3,108.6)}"><text x="444" y="372" font-size="44" font-weight="700" fill="#EC608C">Your life can't.</text></g></g>`;
     const m=fineMouth();
-    fine={x:240,y:540,s:1.0,mouth:m,armR:[120,60],handR:'thumb',wink:t>108.6&&t<109.8,emo:'happy'};
+    fine={x:260,y:500,s:1.0,mouth:m,armR:[55,120],handR:'thumb',wink:t>108.6&&t<109.8,emo:'happy'};
     cam={s:1.0+A(t,106.9,113.4)*0.03,x:540,y:304};
   }
   if(fine) over=mrFine(fine)+over;  // Mr Fine sits in panel space but outside camera zoom
