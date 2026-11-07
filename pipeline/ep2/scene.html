@@ -582,10 +582,10 @@ function scene(t){
   else {
     panel+=`<rect x="0" y="0" width="1080" height="608" fill="url(#cardbg)"/>`;
     panel+=`<g opacity="${A(t,106.9,107.2)}"><text x="740" y="230" text-anchor="middle" font-size="98" font-weight="800" fill="#1C1A20" letter-spacing="-2">MR FINE</text>
-      <text x="740" y="300" text-anchor="middle" font-size="46" font-weight="700" fill="#1f1b24" opacity="${A(t,107.1,107.4)}">Matches can wait.</text>
-      <g transform="translate(740,376) scale(${popS(t,108.3)})"><text x="0" y="0" text-anchor="middle" font-size="60" font-weight="800" fill="#E86A90">YOUR LIFE CAN'T.</text></g></g>`;
+      <text x="740" y="300" text-anchor="middle" font-size="46" font-weight="700" fill="#1f1b24" opacity="${A(t,107.1,107.4)}">Fire is not a toy.</text>
+      <g transform="translate(740,372) scale(${popS(t,108.5)})"><text x="0" y="0" text-anchor="middle" font-size="50" font-weight="800" fill="#E86A90">AND YOUR HOUSE IS</text><text x="0" y="60" text-anchor="middle" font-size="50" font-weight="800" fill="#E86A90">NOT A PLAYGROUND.</text></g></g>`;
     const m=fineMouth();
-    fine={x:300,y:548,s:1.4,mouth:m,armR:t<108.3?[150+Math.sin(t*14)*12,10]:[30,150],handR:t<108.3?'':'thumb',wink:t>108.4,emo:'neutral',smile:t>108.3};
+    fine={x:300,y:548,s:1.4,mouth:m,armR:t<108.5?[150+Math.sin(t*14)*12,10]:[30,150],handR:t<108.5?'':'thumb',wink:t>108.6,emo:'neutral',smile:t>108.5};
     cam={s:1.0+A(t,106.9,113.4)*0.03,x:540,y:304};
   }
   if(fine) over=mrFine(fine)+over;  // Mr Fine sits in panel space but outside camera zoom

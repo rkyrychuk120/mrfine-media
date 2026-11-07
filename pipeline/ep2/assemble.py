@@ -10,7 +10,7 @@ P={
 'n5':["Get low under the smoke,","get out,","and call the firefighters from outside."],
 'm2':["Boring Saturday?","Yes.","House still standing?","Also yes.","Worth it."],
 'm3':["Matches and lighters are not toys.","Find them? Give them to an adult.","And if there's a fire:","get low,","get out,","stay out,","and call the firefighters."],
-'m4':["Matches can wait.","Your life can't."],
+'m4':["Fire is not a toy.","And your house is not a playground."],
 'y1':["It'll go out.","It'll go out..."],'y2':["Fire!","FIRE!"],'y3':["I learned something today."],
 'mom':["Why","are the matches","on the top shelf?"]}
 SPK={'n':'nar','m':'fine','y':'kid','mo':'mom'}
