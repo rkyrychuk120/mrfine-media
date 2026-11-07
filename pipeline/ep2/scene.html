@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<style>
+html,body{margin:0;padding:0;background:#08070a;width:1080px;height:1920px;overflow:hidden}
+svg{display:block}
+text{font-family:Inter,sans-serif}
+</style>
+<script src="timeline.js"></script>
+</head><body>
+<svg id="v" width="1080" height="1920" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg"></svg>
+<script>
+// ---------- helpers ----------
+const OL='#3a2a24', OLF='#2a2330';
+const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
+const sm=v=>{v=clamp(v);return v*v*(3-2*v)};
+const A=(t,a,b)=>sm((t-a)/(b-a));          // eased 0..1 between a and b
+const L=(t,a,b)=>clamp((t-a)/(b-a));
+const mix=(a,b,k)=>a+(b-a)*k;
+const pop=(t,a,d=0.35)=>{const k=clamp((t-a)/d);if(k<=0)return 0;return k>=1?1:1+Math.sin(k*Math.PI)*0.25*(1-k)+ (k<1? (k-1)*0 :0) - (1-sm(k))};
+const popS=(t,a,d=0.3)=>{const k=clamp((t-a)/d);if(k<=0)return 0;return sm(k)*(1+0.18*Math.sin(k*Math.PI))};
+const n1=(t,s=1)=>Math.sin(t*1.7*s)*0.5+Math.sin(t*2.9*s+1.3)*0.3+Math.sin(t*5.3*s+0.7)*0.2;
+let T=0, FR=0;
+function envOf(k){const e=TL.env[k];const i=Math.round(T*30);return e[i]||0}
+function blinkAt(t,seed){const p=(t+seed*1.37)%3.7;return p<0.12?1:0}
+function g(tr,inner,extra=''){return `<g transform="${tr}" ${extra}>${inner}</g>`}
+
+// ---------- arm ----------
+function arm(sx,sy,a1,a2,col,skin,l1=50,l2=46,w=24,hand=''){
+  const r=Math.PI/180;const ex=sx+Math.sin(a1*r)*l1, ey=sy+Math.cos(a1*r)*l1;
+  const hx=ex+Math.sin((a1+a2)*r)*l2, hy=ey+Math.cos((a1+a2)*r)*l2;
+  const p=`M${sx},${sy} L${ex},${ey} L${hx},${hy}`;
+  return {svg:`<path d="${p}" fill="none" stroke="${OL}" stroke-width="${w+8}" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="${p}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="${hx}" cy="${hy}" r="13" fill="${skin}" stroke="${OL}" stroke-width="4"/>${hand}`,hx,hy};
+}
+// ---------- props ----------
+function matchStick(x,y,ang,fl,t){ // fl flame 0..1
+  let s=`<g transform="translate(${x},${y}) rotate(${ang})"><rect x="-3" y="-44" width="6" height="44" rx="2" fill="#E9C58A" stroke="${OL}" stroke-width="2"/><circle cx="0" cy="-46" r="6" fill="#C8382E" stroke="${OL}" stroke-width="2"/>`;
+  if(fl>0){const f=0.8+0.2*Math.sin(t*23);s+=`<g transform="translate(0,-50) scale(${fl*f})"><path d="M0,-34 C10,-18 12,-6 0,4 C-12,-6 -10,-18 0,-34Z" fill="#FF8A1F"/><path d="M0,-22 C6,-12 7,-4 0,2 C-7,-4 -6,-12 0,-22Z" fill="#FFD84A"/></g>`}
+  return s+'</g>';
+}
+function matchBox(x,y,rot=0,open=0,s=1){
+  return `<g transform="translate(${x},${y}) rotate(${rot}) scale(${s})"><rect x="-26" y="-17" width="52" height="34" rx="4" fill="#E2463A" stroke="${OL}" stroke-width="3"/>
+  <rect x="${-26+open*22}" y="-14" width="44" height="28" rx="3" fill="#F3E3C4" stroke="${OL}" stroke-width="2" opacity="${open>0?1:0}"/>
+  <rect x="-18" y="-8" width="36" height="16" rx="3" fill="#FFD23F" stroke="${OL}" stroke-width="2"/><path d="M0,-5 C4,0 3,4 0,6 C-3,4 -4,0 0,-5Z" fill="#E2463A"/></g>`;
+}
+function flame(x,y,h,t,seed=0){ // base at x,y, height h
+  if(h<=1)return '';
+  const f=k=>1+0.12*Math.sin(t*(9+k)+seed+k*2);
+  const w=h*0.55;
+  const tongue=(sc,col,k)=>{const hh=h*sc*f(k), ww=w*sc;const sway=Math.sin(t*6+seed+k)*ww*0.18;
+    return `<path d="M${x-ww},${y} C${x-ww*1.05},${y-hh*0.45} ${x-ww*0.3+sway},${y-hh*0.6} ${x+sway*1.6},${y-hh} C${x+ww*0.35+sway},${y-hh*0.55} ${x+ww*1.05},${y-hh*0.4} ${x+ww},${y} Z" fill="${col}"/>`};
+  return `<g>${tongue(1,'#E8452C',1)}${tongue(0.78,'#FF8A1F',2)}${tongue(0.5,'#FFD23F',3)}</g>`;
+}
+function smokePuffs(x,y,w,t,dens,seed=0){let s='';for(let i=0;i<9;i++){const px=x+((i*97+seed*31)%w)+Math.sin(t*0.6+i)*14, py=y-((t*22+i*40+seed*13)%140), r=26+(i%4)*9;
+  s+=`<circle cx="${px}" cy="${py}" r="${r}" fill="#55545a" opacity="${0.45*dens*(1-((t*22+i*40+seed*13)%140)/170)}"/>`}return s}
+
+// ---------- characters ----------
+const KID={skin:'#E8B48A',hair:'#6B3E26',top:'#3E6FC0',pants:'#2D3550',shoe:'#F4F1EC',hairStyle:'curly'};
+const MOM={skin:'#F0C29C',hair:'#A0452E',top:'#5DA26E',pants:'#4A3B5C',shoe:'#7A4A3A',hairStyle:'bun'};
+function face(o,st){
+  const lx=o.lookX||0, ly=o.lookY||0, f=o.face||'neutral', blink=o.blink||0;
+  let s='';
+  // eyes
+  const eye=(ex,wide,wink)=>{
+    if(blink||wink) return `<path d="M${ex-11},-238 Q${ex},-232 ${ex+11},-238" fill="none" stroke="${OL}" stroke-width="4" stroke-linecap="round"/>`;
+    if(f==='happy') return `<path d="M${ex-12},-236 Q${ex},-250 ${ex+12},-236" fill="none" stroke="${OL}" stroke-width="5" stroke-linecap="round"/>`;
+    if(f==='bored') return `<circle cx="${ex}" cy="-238" r="11" fill="#fff" stroke="${OL}" stroke-width="3.5"/><circle cx="${ex+lx}" cy="${-235+ly}" r="5.5" fill="${OL}"/><path d="M${ex-13},-240 L${ex+13},-240 L${ex+13},-252 L${ex-13},-252Z" fill="${st.skin}"/><path d="M${ex-12},-240 L${ex+12},-240" stroke="${OL}" stroke-width="4" stroke-linecap="round"/>`;
+    const r=wide?15:11.5, pr=wide?4.5:6;
+    return `<circle cx="${ex}" cy="-238" r="${r}" fill="#fff" stroke="${OL}" stroke-width="3.5"/><circle cx="${ex+lx}" cy="${-238+ly}" r="${pr}" fill="${OL}"/><circle cx="${ex+lx+2}" cy="${-240+ly}" r="1.6" fill="#fff"/>`;
+  };
+  const wide=['panic','scared','shock','yell','spark'].includes(f);
+  s+=eye(-23,wide,o.winkL)+eye(23,wide,false);
+  // brows
+  const bt={neutral:[0,0],happy:[-3,0],grin:[-4,0],panic:[-10,14],scared:[-8,12],shock:[-12,4],yell:[-2,-12],sheepish:[-6,10],bored:[2,-4],spark:[-10,0],proud:[-6,-4],suspicious:[0,-10]}[f]||[0,0];
+  s+=`<path d="M-34,${-258+bt[0]} L-13,${-258+bt[0]-bt[1]*0.35}" stroke="${OL}" stroke-width="4" stroke-linecap="round"/>
+      <path d="M34,${-258+bt[0]} L13,${-258+bt[0]-bt[1]*0.35}" stroke="${OL}" stroke-width="4" stroke-linecap="round"/>`;
+  if(f==='suspicious') s=s.replace(/M34,(-?[\d.]+) L13/,'M34,-252 L13');
+  // blush
+  s+=`<ellipse cx="-40" cy="-214" rx="11" ry="6" fill="#F08A8A" opacity=".45"/><ellipse cx="40" cy="-214" rx="11" ry="6" fill="#F08A8A" opacity=".45"/>`;
+  // mouth
+  const m=o.mouth||0;
+  if(m>0.06) s+=`<ellipse cx="0" cy="-204" rx="${8+m*6}" ry="${3+m*11}" fill="#7A2E2E" stroke="${OL}" stroke-width="3.5"/>`;
+  else if(f==='grin'||f==='spark') s+=`<path d="M-17,-210 Q0,-188 17,-210 Z" fill="#7A2E2E" stroke="${OL}" stroke-width="3.5" stroke-linejoin="round"/>`;
+  else if(f==='panic'||f==='scared'||f==='shock') s+=`<ellipse cx="0" cy="-203" rx="7" ry="9" fill="#7A2E2E" stroke="${OL}" stroke-width="3.5"/>`;
+  else if(f==='sheepish') s+=`<path d="M-14,-205 Q-7,-200 0,-205 Q7,-210 14,-205" fill="none" stroke="${OL}" stroke-width="4" stroke-linecap="round"/>`;
+  else if(f==='bored'||f==='suspicious') s+=`<path d="M-11,-204 L11,-204" stroke="${OL}" stroke-width="4" stroke-linecap="round"/>`;
+  else s+=`<path d="M-13,-208 Q0,-196 13,-208" fill="none" stroke="${OL}" stroke-width="4" stroke-linecap="round"/>`;
+  if(o.sweat) s+=`<path d="M48,-262 C53,-252 55,-246 48,-242 C41,-246 43,-252 48,-262Z" fill="#9FD6F5" stroke="${OL}" stroke-width="2.5"/>`;
+  return s;
+}
+function head(o,st){
+  let s='';const hs=st.hairStyle;
+  if(hs==='bun') s+=`<circle cx="0" cy="-312" r="26" fill="${st.hair}" stroke="${OL}" stroke-width="4"/>`;
+  if(hs==='bun') s+=`<path d="M-66,-236 C-72,-170 -60,-150 -40,-150 L40,-150 C60,-150 72,-170 66,-236Z" fill="${st.hair}" stroke="${OL}" stroke-width="4"/>`;
+  s+=`<circle cx="-64" cy="-232" r="11" fill="${st.skin}" stroke="${OL}" stroke-width="4"/><circle cx="64" cy="-232" r="11" fill="${st.skin}" stroke="${OL}" stroke-width="4"/>`;
+  s+=`<ellipse cx="0" cy="-236" rx="64" ry="62" fill="${st.skin}" stroke="${OL}" stroke-width="4.5"/>`;
+  if(hs==='curly'){let c='';for(let i=0;i<9;i++){const a=Math.PI*(1.05+i*0.11);c+=`<circle cx="${Math.cos(a)*54}" cy="${-246+Math.sin(a)*50}" r="${21+(i%2)*3}" fill="${st.hair}" stroke="${OL}" stroke-width="4"/>`}
+    s+=c+`<path d="M-58,-262 C-50,-300 50,-300 58,-262 C40,-276 10,-268 0,-262 C-14,-276 -40,-276 -58,-262Z" fill="${st.hair}"/><path d="M-12,-292 q10,-8 22,-2" stroke="#8C5A3C" stroke-width="5" fill="none" stroke-linecap="round"/>`}
+  if(hs==='bun') s+=`<path d="M-64,-246 C-60,-300 60,-300 64,-246 C40,-268 -10,-272 -64,-246Z" fill="${st.hair}" stroke="${OL}" stroke-width="4"/>`;
+  return s+face(o,st);
+}
+function person(o,st){ // standing rig, origin feet
+  const t=T, s=o.s||1, bob=Math.sin(t*2.2+(o.seed||0))*2.2;
+  const wk=o.walk!=null? o.walk:null;
+  let legs='';
+  const legX=[-18,18];
+  legX.forEach((lx,i)=>{const sw=wk!=null? Math.sin(wk*Math.PI*2+i*Math.PI)*16:0; const lift=wk!=null? Math.max(0,Math.sin(wk*Math.PI*2+i*Math.PI))*8:0;
+    legs+=`<path d="M${lx},-66 L${lx+sw},${-6-lift}" stroke="${OL}" stroke-width="32" stroke-linecap="round"/><path d="M${lx},-66 L${lx+sw},${-6-lift}" stroke="${st.pants}" stroke-width="24" stroke-linecap="round"/><ellipse cx="${lx+sw+4}" cy="${-4-lift}" rx="19" ry="10" fill="${st.shoe}" stroke="${OL}" stroke-width="4"/>`});
+  const lean=o.lean||0, slump=o.slump||0, sh=o.shake?Math.sin(t*40)*3*o.shake:0;
+  const aL=o.armL||[12,10], aR=o.armR||[-12,-10];
+  const rA=arm(-44,-158+slump*6,aL[0],aL[1],st.top,st.skin,50,46,24,o.handL||'');
+  const rB=arm(44,-158+slump*6,aR[0],aR[1],st.top,st.skin,50,46,24,'');
+  let body=`<rect x="-48" y="${-176+slump*5}" width="96" height="116" rx="30" fill="${st.top}" stroke="${OL}" stroke-width="4.5"/>
+    <path d="M-16,${-174+slump*5} L0,${-156+slump*5} L16,${-174+slump*5}" fill="none" stroke="${OL}" stroke-width="3.5" stroke-linejoin="round"/>`;
+  if(st===MOM) body+=`<path d="M0,-156 L0,-62" stroke="${OL}" stroke-width="3" opacity=".5"/>`;
+  const behind=o.armLBehind?rA.svg:'';
+  const front=(o.armLBehind?'':rA.svg)+rB.svg;
+  const hold=o.holdR?o.holdR(rB.hx,rB.hy):'';
+  const holdL=o.holdL?o.holdL(rA.hx,rA.hy):'';
+  const hd=g(`translate(0,${slump*8}) rotate(${(o.tilt||0)})`,head(o,st));
+  const inner=behind+legs+body+hd+front+hold+holdL;
+  return g(`translate(${o.x+sh},${o.y}) scale(${(o.flip?-1:1)*s},${s}) rotate(${lean}) translate(0,${bob})`,inner);
+}
+function kidCrawl(o){ // crawling, facing right
+  const t=T, st=KID, ph=(o.ph||0)*Math.PI*2, s=o.s||1;
+  const k1=Math.sin(ph)*14, k2=Math.sin(ph+Math.PI)*14;
+  let svg='';
+  const limb=(x1,y1,x2,y2,c,w)=>`<path d="M${x1},${y1} L${x2},${y2}" stroke="${OL}" stroke-width="${w+8}" stroke-linecap="round"/><path d="M${x1},${y1} L${x2},${y2}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`;
+  svg+=limb(-50,-70,-40+k2,-8,st.pants,24)+limb(-40+k2,-8,-95+k2,-8,st.pants,24);
+  svg+=limb(40,-78,52+k1,-8,st.top,22)+`<circle cx="${52+k1}" cy="-8" r="12" fill="${st.skin}" stroke="${OL}" stroke-width="4"/>`;
+  svg+=`<ellipse cx="0" cy="-82" rx="70" ry="38" fill="${st.top}" stroke="${OL}" stroke-width="4.5"/>`;
+  svg+=limb(-50,-70,-40+k1,-8,st.pants,24)+limb(-40+k1,-8,-95+k1,-8,st.pants,24);
+  svg+=limb(40,-78,52+k2,-8,st.top,22)+`<circle cx="${52+k2}" cy="-8" r="12" fill="${st.skin}" stroke="${OL}" stroke-width="4"/>`;
+  svg+=g(`translate(118,128) scale(.78)`,head({face:o.face||'scared',lookX:5,mouth:o.mouth||0,blink:o.blink},st));
+  return g(`translate(${o.x},${o.y}) scale(${s})`,svg);
+}
+function kidHug(o){ // sitting hugging knees
+  const st=KID,s=o.s||1,cough=o.cough||0;
+  let svg=`<ellipse cx="0" cy="-6" rx="70" ry="12" fill="#000" opacity=".25"/>`;
+  svg+=`<rect x="-46" y="-150" width="92" height="110" rx="30" fill="${st.top}" stroke="${OL}" stroke-width="4.5"/>`;
+  svg+=`<path d="M-30,-40 L10,-110 L40,-20" fill="none" stroke="${OL}" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/><path d="M-30,-40 L10,-110 L40,-20" fill="none" stroke="${st.pants}" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>`;
+  svg+=`<ellipse cx="44" cy="-14" rx="19" ry="10" fill="${st.shoe}" stroke="${OL}" stroke-width="4"/>`;
+  svg+=`<path d="M-40,-130 C-10,-95 20,-95 30,-104" fill="none" stroke="${OL}" stroke-width="32" stroke-linecap="round"/><path d="M-40,-130 C-10,-95 20,-95 30,-104" fill="none" stroke="${st.top}" stroke-width="24" stroke-linecap="round"/><circle cx="30" cy="-104" r="13" fill="${st.skin}" stroke="${OL}" stroke-width="4"/>`;
+  svg+=g(`translate(0,${40-cough*8}) rotate(${-cough*6})`,head({face:o.face||'scared',lookX:o.lookX||4,mouth:o.mouth||0,blink:o.blink,sweat:1},st));
+  return g(`translate(${o.x},${o.y}) scale(${s})`,svg);
+}
+function mrFine(o){ // origin feet
+  const t=T,s=o.s||0.8,bob=Math.sin(t*2.6)*2.5,m=o.mouth||0;
+  const aL=o.armL||[14,8], aR=o.armR||[-14,-8];
+  const bone='#F2EEEC', hood='#2E2A38';
+  const armF=(sx,a)=>{const r=Math.PI/180;const ex=sx+Math.sin(a[0]*r)*40,ey=-150+Math.cos(a[0]*r)*40,hx=ex+Math.sin((a[0]+a[1])*r)*36,hy=ey+Math.cos((a[0]+a[1])*r)*36;const p=`M${sx},-150 L${ex},${ey} L${hx},${hy}`;
+    return {s:`<path d="${p}" fill="none" stroke="${OLF}" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/><path d="${p}" fill="none" stroke="${hood}" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>`,hx,hy}};
+  const L_=armF(-42,aL), R_=armF(42,aR);
+  const hand=(h,kind)=>{
+    if(kind==='thumb') return `<g transform="translate(${h.hx},${h.hy})"><rect x="-13" y="-12" width="26" height="24" rx="10" fill="${bone}" stroke="${OLF}" stroke-width="4"/><rect x="${o.thumbDir<0?-24:6}" y="-30" width="12" height="24" rx="6" fill="${bone}" stroke="${OLF}" stroke-width="4"/></g>`;
+    if(kind==='point') return `<g transform="translate(${h.hx},${h.hy})"><circle r="13" fill="${bone}" stroke="${OLF}" stroke-width="4"/><rect x="-5" y="-32" width="10" height="24" rx="5" fill="${bone}" stroke="${OLF}" stroke-width="4"/></g>`;
+    if(kind==='remote') return `<g transform="translate(${h.hx},${h.hy}) rotate(-15)"><rect x="-11" y="-40" width="22" height="46" rx="6" fill="#26232c" stroke="${OLF}" stroke-width="3"/><circle cx="0" cy="-31" r="5" fill="${o.press?'#ff6b6b':'#E2463A'}"/><rect x="-6" y="-20" width="12" height="3" fill="#888"/><rect x="-6" y="-14" width="12" height="3" fill="#888"/><circle r="13" fill="${bone}" stroke="${OLF}" stroke-width="4"/></g>`;
+    return `<circle cx="${h.hx}" cy="${h.hy}" r="13" fill="${bone}" stroke="${OLF}" stroke-width="4"/>`;
+  };
+  let svg=`<ellipse cx="0" cy="0" rx="62" ry="10" fill="#000" opacity=".18"/>`;
+  [-18,18].forEach((lx,i)=>{const sw=o.walk!=null?Math.sin(o.walk*Math.PI*2+i*Math.PI)*12:0;svg+=`<path d="M${lx},-52 L${lx+sw},-12" stroke="${OLF}" stroke-width="16" stroke-linecap="round"/><path d="M${lx},-52 L${lx+sw},-12" stroke="${bone}" stroke-width="9" stroke-linecap="round"/><ellipse cx="${lx+sw+(i?6:-6)}" cy="-8" rx="21" ry="12" fill="${bone}" stroke="${OLF}" stroke-width="4.5"/>`});
+  svg+=`<rect x="-40" y="-80" width="80" height="32" rx="8" fill="#E87FA6" stroke="${OLF}" stroke-width="4.5"/><path d="M0,-78 L0,-56" stroke="${OLF}" stroke-width="3"/>`;
+  svg+=L_.s;
+  svg+=`<rect x="-50" y="-176" width="100" height="104" rx="26" fill="${hood}" stroke="${OLF}" stroke-width="4.5"/><path d="M-30,-88 L30,-88" stroke="#1e1b26" stroke-width="4"/>`;
+  // brain emblem
+  svg+=`<g transform="translate(0,-124)"><circle cx="-9" cy="-6" r="11" fill="#F08CB0" stroke="${OLF}" stroke-width="3"/><circle cx="9" cy="-6" r="11" fill="#F08CB0" stroke="${OLF}" stroke-width="3"/><circle cx="-10" cy="8" r="10" fill="#F08CB0" stroke="${OLF}" stroke-width="3"/><circle cx="10" cy="8" r="10" fill="#F08CB0" stroke="${OLF}" stroke-width="3"/><path d="M0,-14 L0,14 M-14,-2 q6,4 12,0 M2,4 q6,4 12,0" stroke="#c45c84" stroke-width="2.5" fill="none"/></g>`;
+  svg+=hand(L_,o.handL)+R_.s+hand(R_,o.handR);
+  // head
+  const hx=o.tilt||0;
+  let h=`<path d="M-84,-266 C-84,-352 84,-352 84,-266 C84,-230 66,-204 42,-196 L-42,-196 C-66,-204 -84,-230 -84,-266Z" fill="${bone}" stroke="${OLF}" stroke-width="5"/>`;
+  h+=`<path d="M40,-334 L30,-312 L44,-300" fill="none" stroke="${OLF}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const blink=blinkAt(t,7)||o.blink;
+  const eyeF=(ex,wink)=>{ if(blink||wink) return `<path d="M${ex-18},-258 Q${ex},-246 ${ex+18},-258" fill="none" stroke="${OLF}" stroke-width="5" stroke-linecap="round"/>`;
+    const sc=o.eyeScale||1; return `<ellipse cx="${ex}" cy="-260" rx="${20*sc}" ry="${23*sc}" fill="#141118"/><circle cx="${ex+7}" cy="-269" r="${7.5*sc}" fill="#fff"/><circle cx="${ex-6}" cy="-252" r="${3.2*sc}" fill="#fff"/>`};
+  h+=eyeF(-32,false)+eyeF(32,o.wink);
+  if(o.worried) h+=`<path d="M-50,-292 L-20,-298 M50,-292 L20,-298" stroke="${OLF}" stroke-width="4" stroke-linecap="round"/>`;
+  h+=`<path d="M-6,-232 L6,-232 L0,-222 Z" fill="${OLF}"/>`;
+  h+=`<ellipse cx="-54" cy="-232" rx="13" ry="7" fill="#F4A0B4" opacity=".7"/><ellipse cx="54" cy="-232" rx="13" ry="7" fill="#F4A0B4" opacity=".7"/>`;
+  if(m>0.06) h+=`<ellipse cx="0" cy="-210" rx="${9+m*5}" ry="${3+m*10}" fill="#4a2333" stroke="${OLF}" stroke-width="3.5"/>`;
+  else if(o.smile) h+=`<path d="M-14,-214 Q0,-200 14,-214" fill="none" stroke="${OLF}" stroke-width="4" stroke-linecap="round"/>`;
+  else h+=`<path d="M-9,-211 L9,-211" stroke="${OLF}" stroke-width="4" stroke-linecap="round"/>`;
+  svg+=g(`rotate(${hx},0,-200)`,h);
+  return g(`translate(${o.x},${o.y}) scale(${(o.flip?-1:1)*s},${s}) translate(0,${bob})`,svg);
+}
+
+// ---------- rooms ----------
+function kitchenRoom(o){
+  const t=T; let s='';
+  s+=`<rect x="-500" y="-200" width="2100" height="670" fill="#F3DFC1"/>`;
+  for(let x=-480;x<1580;x+=46) s+=`<rect x="${x}" y="-200" width="18" height="670" fill="#EED6B4" opacity=".55"/>`;
+  s+=`<rect x="-500" y="330" width="2100" height="140" fill="#E6C49A"/><rect x="-500" y="326" width="2100" height="10" fill="#D2AE84"/>`;
+  for(let x=-480;x<1580;x+=60) s+=`<rect x="${x+4}" y="345" width="52" height="112" rx="4" fill="none" stroke="#D6B28A" stroke-width="3"/>`;
+  s+=`<rect x="-500" y="470" width="2100" height="400" fill="#C99A6B"/>`;
+  for(let x=-520;x<1600;x+=120) s+=`<path d="M${x},470 L${x-60},608" stroke="#B88A5D" stroke-width="3"/>`;
+  s+=`<ellipse cx="660" cy="545" rx="230" ry="34" fill="#B5574E" opacity=".75"/>`;
+  // window
+  const wx=600,wy=86,ww=200,wh=230;
+  s+=`<rect x="${wx}" y="${wy}" width="${ww}" height="${wh}" rx="6" fill="#9FD3F0" stroke="#8C6A4A" stroke-width="10"/>`;
+  const cl=(t*6)%320;
+  s+=`<g opacity=".9"><ellipse cx="${wx+20+cl*0.6%220}" cy="${wy+70}" rx="34" ry="14" fill="#fff"/><ellipse cx="${wx+150-(cl*0.4)%180}" cy="${wy+140}" rx="26" ry="11" fill="#fff"/></g>`;
+  s+=`<path d="M${wx+ww/2},${wy} L${wx+ww/2},${wy+wh} M${wx},${wy+wh/2} L${wx+ww},${wy+wh/2}" stroke="#8C6A4A" stroke-width="8"/>`;
+  s+=`<rect x="${wx-10}" y="${wy+wh}" width="${ww+20}" height="12" rx="3" fill="#A87F58"/>`;
+  s+=`<rect x="${wx-30}" y="${wy-22}" width="${ww+60}" height="10" rx="5" fill="#7A5638"/>`;
+  // curtains (left + right), right one may burn
+  const sway=Math.sin(t*1.3)*4;
+  const curt=(x0,dir,burn)=>{let c=`<path d="M${x0},${wy-14} L${x0+dir*62},${wy-14} C${x0+dir*58+sway},${wy+120} ${x0+dir*70+sway},${wy+220} ${x0+dir*58+sway*1.4},${wy+300} L${x0},${wy+300} Z" fill="${burn?'#B83A33':'#C8433C'}" stroke="#7E2723" stroke-width="4"/>`;
+    for(let i=1;i<4;i++) c+=`<path d="M${x0+dir*i*15},${wy-10} C${x0+dir*i*15+sway*0.5},${wy+140} ${x0+dir*i*16+sway},${wy+240} ${x0+dir*i*14+sway*1.2},${wy+296}" stroke="#A8352F" stroke-width="3" fill="none"/>`;return c};
+  s+=curt(wx-26,1,false);
+  if(!o.curtainGone) s+=curt(wx+ww+26,-1,o.fire>0);
+  if(o.blanket) s+=`<path d="M${wx+ww-46},${wy+150} C${wx+ww-10},${wy+140} ${wx+ww+40},${wy+150} ${wx+ww+44},${wy+160} L${wx+ww+50},${wy+300} C${wx+ww+10},${wy+310} ${wx+ww-30},${wy+305} ${wx+ww-52},${wy+300} Z" fill="#6E8FCB" stroke="#3D4F78" stroke-width="4"/><path d="M${wx+ww-30},${wy+170} L${wx+ww+30},${wy+290} M${wx+ww},${wy+165} L${wx+ww+40},${wy+240}" stroke="#8FA9DA" stroke-width="5"/>`;
+  // counter + cabinets (left)
+  s+=`<rect x="290" y="300" width="270" height="170" fill="#E9E2D6" stroke="${OL}" stroke-width="4"/><rect x="282" y="290" width="286" height="16" rx="4" fill="#9C7A5C" stroke="${OL}" stroke-width="4"/>`;
+  const dr=o.drawer||0; // 0 closed,1 open
+  s+=`<rect x="306" y="${400}" width="112" height="56" rx="5" fill="#DDD3C3" stroke="${OL}" stroke-width="3.5"/><rect x="432" y="400" width="112" height="56" rx="5" fill="#DDD3C3" stroke="${OL}" stroke-width="3.5"/>`;
+  s+=`<g transform="translate(0,${dr*40})"><rect x="${306-dr*6}" y="${318}" width="${238+dr*12}" height="${60+dr*6}" rx="5" fill="#E2D8C8" stroke="${OL}" stroke-width="3.5"/>${dr>0.2?`<rect x="${312-dr*6}" y="314" width="${226+dr*12}" height="${8+dr*8}" fill="#B9A890" stroke="${OL}" stroke-width="2.5"/>`:''}<rect x="400" y="${342+dr*3}" width="50" height="10" rx="5" fill="#8C7B66"/>${o.boxInDrawer?matchBox(470,322,0,0,0.6):''}</g>`;
+  s+=`<rect x="370" y="420" width="30" height="8" rx="4" fill="#8C7B66"/><rect x="450" y="420" width="30" height="8" rx="4" fill="#8C7B66"/>`;
+  // top shelf
+  s+=`<rect x="300" y="150" width="240" height="12" rx="3" fill="#8C6A4A" stroke="${OL}" stroke-width="3"/>`;
+  s+=`<rect x="316" y="104" width="34" height="46" rx="6" fill="#F2C14E" stroke="${OL}" stroke-width="3"/><rect x="362" y="114" width="30" height="36" rx="6" fill="#7FB3D5" stroke="${OL}" stroke-width="3"/><circle cx="512" cy="132" r="16" fill="#6BAA75" stroke="${OL}" stroke-width="3"/><rect x="500" y="132" width="24" height="18" fill="#C9744A" stroke="${OL}" stroke-width="3"/>`;
+  if(o.boxOnShelf) s+=matchBox(440,136,0,0,0.75);
+  // kettle on counter
+  s+=`<path d="M470,290 L478,250 L520,250 L528,290 Z" fill="#D9534F" stroke="${OL}" stroke-width="3.5"/><path d="M482,250 Q499,232 516,250" fill="none" stroke="${OL}" stroke-width="4"/>`;
+  // closet door right
+  s+=`<rect x="850" y="120" width="170" height="350" rx="6" fill="#B07A50" stroke="${OL}" stroke-width="4.5"/>`;
+  const cd=o.closetOpen||0;
+  if(cd>0) s+=`<rect x="858" y="128" width="154" height="342" fill="#2a2230"/>`;
+  s+=`<g transform="translate(858,0) scale(${1-cd*0.82},1) translate(-858,0)"><rect x="858" y="128" width="154" height="342" rx="4" fill="#C08A5E" stroke="${OL}" stroke-width="3"/><rect x="876" y="150" width="118" height="130" rx="4" fill="none" stroke="#9C6A42" stroke-width="4"/><rect x="876" y="300" width="118" height="150" rx="4" fill="none" stroke="#9C6A42" stroke-width="4"/><circle cx="878" cy="300" r="8" fill="#E8C35A" stroke="${OL}" stroke-width="3"/></g>`;
+  if(o.closetSmoke) s+=`<path d="M850,470 Q900,${462-6*Math.sin(t*3)} 1020,470" fill="none" stroke="#6b6a70" stroke-width="10" opacity="${o.closetSmoke}"/>`;
+  // wall clock
+  const ca=t*30;s+=`<circle cx="190" cy="120" r="36" fill="#fff" stroke="${OL}" stroke-width="5"/><path d="M190,120 L${190+Math.sin(ca*Math.PI/180)*24},${120-Math.cos(ca*Math.PI/180)*24}" stroke="${OL}" stroke-width="3" stroke-linecap="round"/><path d="M190,120 L200,104" stroke="${OL}" stroke-width="4" stroke-linecap="round"/>`;
+  // picture + plant
+  s+=`<rect x="80" y="190" width="120" height="90" rx="4" fill="#F7EBDD" stroke="#8C6A4A" stroke-width="7"/><path d="M92,268 L130,222 L160,250 L188,230 L188,268Z" fill="#7CB27F"/>`;
+  s+=`<rect x="60" y="400" width="54" height="70" rx="6" fill="#C9744A" stroke="${OL}" stroke-width="3.5"/><path d="M87,400 C70,350 60,340 74,320 M87,400 C96,350 110,340 104,316 M87,400 C86,360 88,340 88,322" stroke="#5E9B62" stroke-width="10" fill="none" stroke-linecap="round"/>`;
+  // smoke alarm on ceiling
+  const al=o.alarm? (Math.floor(t*4)%2):0;
+  s+=`<rect x="680" y="0" width="56" height="12" fill="#ddd" stroke="${OL}" stroke-width="3"/><circle cx="726" cy="6" r="4" fill="${al?'#ff3b30':'#7a2222'}"/>${al?`<circle cx="726" cy="8" r="22" fill="#ff3b30" opacity=".35"/>`:''}`;
+  // fire on curtain
+  if(o.fire>0){const fh=o.fire; const bx=wx+ww+26-34, by=wy+300;
+    s+=`<rect x="${bx-60}" y="0" width="120" height="${by}" fill="url(#scorch)" opacity="${clamp(fh-0.3)*0.6}"/>`;
+    s+=flame(bx-12,by-fh*40,30+fh*220,t,1)+flame(bx+18,by-fh*20,24+fh*180,t,2)+(fh>0.5?flame(bx-4,by-fh*150,fh*170,t,3):'');
+    s+=`<circle cx="${bx}" cy="${by-fh*120}" r="${80+fh*200}" fill="url(#glow)" opacity="${0.5}"/>`;
+  }
+  return s;
+}
+function closetInside(o){
+  const t=T;let s=`<rect x="0" y="0" width="1080" height="608" fill="#241e2b"/>`;
+  s+=`<rect x="0" y="460" width="1080" height="148" fill="#1b1621"/>`;
+  for(let i=0;i<6;i++) s+=`<path d="M${260+i*110},40 L${260+i*110},70" stroke="#5a4c66" stroke-width="5"/><path d="M${230+i*110},70 Q${260+i*110},60 ${290+i*110},70 L${300+i*110},${190+(i%2)*40} L${220+i*110},${190+(i%2)*40} Z" fill="${['#6b4a7a','#4a6a7a','#7a5a4a'][i%3]}" opacity=".7"/>`;
+  s+=`<rect x="0" y="30" width="1080" height="12" fill="#3d3247"/>`;
+  // light slit from door
+  const fl=o.firelight?0.5+0.5*Math.sin(t*12):0;
+  s+=`<path d="M930,0 L950,0 L1080,608 L1010,608 Z" fill="${o.firelight?'#ffb36b':'#fff3c4'}" opacity="${0.18+fl*0.12}"/><rect x="928" y="0" width="22" height="608" fill="${o.firelight?'#ffb36b':'#fff3c4'}" opacity=".85"/>`;
+  if(o.smoke) s+=smokePuffs(700,560,360,t,o.smoke,4)+`<rect x="600" y="520" width="480" height="88" fill="#4b4a50" opacity="${o.smoke*0.6}"/>`;
+  return s;
+}
+function outsideHouse(o){
+  const t=T;let s=`<rect x="0" y="0" width="1080" height="608" fill="#A9DBF5"/><ellipse cx="${200+(t*8)%800}" cy="80" rx="60" ry="20" fill="#fff" opacity=".9"/>`;
+  s+=`<rect x="0" y="470" width="1080" height="138" fill="#7CC07A"/><rect x="0" y="520" width="1080" height="40" fill="#CFC7BB"/>`;
+  s+=`<path d="M420,200 L640,70 L860,200 Z" fill="#B5574E" stroke="${OL}" stroke-width="5"/><rect x="450" y="200" width="380" height="270" fill="#F3DFC1" stroke="${OL}" stroke-width="5"/>`;
+  s+=`<rect x="480" y="240" width="100" height="90" fill="#9FD3F0" stroke="#8C6A4A" stroke-width="7"/><rect x="700" y="240" width="100" height="90" fill="#6b5a5a" stroke="#8C6A4A" stroke-width="7"/>`;
+  s+=`<rect x="600" y="340" width="80" height="130" fill="#7A5638" stroke="${OL}" stroke-width="5"/>`;
+  s+=smokePuffs(700,250,100,t,0.9,2)+smokePuffs(710,200,90,t+3,0.7,5);
+  s+=`<path d="M600,470 L560,608 L720,608 L680,470Z" fill="#D8CFC2"/>`;
+  return s;
+}
+function smokeLayer(d,t){ if(d<=0)return '';
+  return `<rect x="0" y="0" width="1080" height="608" fill="url(#smokeGrad)" opacity="${d}"/>`+smokePuffs(60,120+d*120,960,t,d,1)+smokePuffs(40,60+d*80,1000,t+2,d,3);
+}
+
+// ---------- overlays ----------
+function badge(x,y,txt,o={}){ const fs=o.fs||30, padX=18, w=txt.length*fs*0.62+padX*2, h=fs+22, sc=o.sc==null?1:o.sc;
+  if(sc<=0.01)return '';
+  const bg=o.bg||'#F6C945', fg=o.fg||'#2a2018';
+  return `<g transform="translate(${x},${y}) scale(${sc}) rotate(${o.rot||0})"><rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx="${h/2.6}" fill="${bg}" stroke="${o.stroke||'#2a2018'}" stroke-width="4"/><text x="0" y="${fs*0.36}" text-anchor="middle" font-size="${fs}" font-weight="800" fill="${fg}">${txt}</text></g>`;}
+function stampX(x,y,r,sc){ if(sc<=0)return '';return `<g transform="translate(${x},${y}) scale(${sc})"><path d="M${-r},${-r} L${r},${r} M${r},${-r} L${-r},${r}" stroke="#fff" stroke-width="30" stroke-linecap="round"/><path d="M${-r},${-r} L${r},${r} M${r},${-r} L${-r},${r}" stroke="#E5383B" stroke-width="20" stroke-linecap="round"/></g>`}
+function bubble(x,y,w,h,inner,sc){ if(sc<=0)return ''; return `<g transform="translate(${x},${y}) scale(${sc})"><circle cx="${-w/2+20}" cy="${h/2+30}" r="10" fill="#fff" stroke="${OL}" stroke-width="3"/><circle cx="${-w/2+4}" cy="${h/2+52}" r="6" fill="#fff" stroke="${OL}" stroke-width="3"/><rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx="${h/2}" fill="#fff" stroke="${OL}" stroke-width="4"/>${inner}</g>`}
+function icon(kind,x,y,sc){ if(sc<=0)return ''; let s='';
+  if(kind==='match') s=matchStick(0,30,0,1,T);
+  if(kind==='curtain') s=`<path d="M-28,-40 L28,-40 C26,0 34,20 28,40 L-28,40 C-34,20 -26,0 -28,-40Z" fill="#C8433C" stroke="#7E2723" stroke-width="4"/>`;
+  if(kind==='fire') s=flame(0,40,90,T,4);
+  if(kind==='closet') s=`<rect x="-30" y="-44" width="60" height="88" rx="4" fill="#C08A5E" stroke="${OL}" stroke-width="4"/><circle cx="-18" cy="0" r="5" fill="#E8C35A"/>`;
+  if(kind==='blanket') s=`<path d="M-40,-30 L40,-34 L44,34 L-44,30Z" fill="#6E8FCB" stroke="#3D4F78" stroke-width="4"/>`;
+  if(kind==='phone') s=`<rect x="-24" y="-44" width="48" height="88" rx="10" fill="#26232c" stroke="${OL}" stroke-width="4"/><rect x="-18" y="-34" width="36" height="62" rx="4" fill="#E5383B"/><path d="M-12,-8 L-6,-16 L4,-10 L10,-16 L12,8 L-12,8Z" fill="#fff"/>`;
+  if(kind==='lighter') s=`<rect x="-16" y="-30" width="32" height="64" rx="8" fill="#4AA3DF" stroke="${OL}" stroke-width="4"/><rect x="-10" y="-42" width="20" height="14" rx="3" fill="#bbb" stroke="${OL}" stroke-width="3"/>`;
+  if(kind==='hand') s=`<path d="M-40,10 C-20,0 0,-4 20,-2 L40,-10 L44,4 L22,14 C0,24 -20,24 -40,22Z" fill="#E8B48A" stroke="${OL}" stroke-width="4"/>`+matchBox(10,-24,0,0,.6);
+  if(kind==='truck') s=`<rect x="-60" y="-26" width="90" height="44" rx="6" fill="#E5383B" stroke="${OL}" stroke-width="4"/><rect x="30" y="-14" width="34" height="32" rx="5" fill="#E5383B" stroke="${OL}" stroke-width="4"/><rect x="38" y="-8" width="18" height="12" fill="#9FD3F0"/><circle cx="-36" cy="22" r="12" fill="#333" stroke="${OL}" stroke-width="3"/><circle cx="38" cy="22" r="12" fill="#333" stroke="${OL}" stroke-width="3"/><path d="M-56,-34 L20,-34" stroke="#ddd" stroke-width="6"/>`;
+  if(kind==='grounded') s=`<rect x="-70" y="-22" width="140" height="44" rx="6" fill="none" stroke="#E5383B" stroke-width="6" transform="rotate(-10)"/><text x="0" y="12" text-anchor="middle" font-size="30" font-weight="800" fill="#E5383B" transform="rotate(-10)">GROUNDED</text>`;
+  if(kind==='cap') s=`<path d="M-44,0 L0,-20 L44,0 L0,20Z" fill="#26232c" stroke="${OL}" stroke-width="3"/><rect x="-24" y="4" width="48" height="20" fill="#26232c"/><path d="M30,6 L30,28" stroke="#F6C945" stroke-width="4"/>`;
+  return `<g transform="translate(${x},${y}) scale(${sc})">${s}</g>`;
+}
+function momAngryFace(){return g('translate(-60,8) scale(.42)',head({face:'suspicious'},MOM))}
+
+// ---------- captions ----------
+const CAPC={nar:{cur:'#FFD84A',past:'#FFFFFF',fut:'#9C9AA2'},fine:{cur:'#FFB3CF',past:'#F07FA8',fut:'#9A6A7E'},kid:{cur:'#BFD7FF',past:'#7FAEF5',fut:'#5F7398'},mom:{cur:'#FFD27A',past:'#E5A84A',fut:'#8E7448'}};
+function captions(t){
+  const c=TL.caps.find(c=>t>=c.start-0.05 && t<c.end+0.25);
+  if(!c) return '';
+  const C=CAPC[c.spk];let parts='';
+  c.words.forEach(([w,a,b])=>{const col=t>=a&&t<b+0.02?C.cur:(t>=b?C.past:C.fut);parts+=`<tspan fill="${col}">${w.replace(/&/g,'&amp;')} </tspan>`});
+  const k=clamp((t-c.start+0.05)/0.12);
+  return `<g transform="translate(540,1352) scale(${0.9+0.1*k})" opacity="${k}"><text x="0" y="0" text-anchor="middle" font-size="50" font-weight="800" stroke="#000" stroke-width="10" stroke-linejoin="round" paint-order="stroke" letter-spacing="0.5">${parts}</text></g>`;
+}
+
+// ---------- defs ----------
+const DEFS=`<defs>
+<clipPath id="pc"><rect x="0" y="0" width="1080" height="608"/></clipPath>
+<linearGradient id="smokeGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1f1e22" stop-opacity=".95"/><stop offset=".55" stop-color="#3b3a40" stop-opacity=".8"/><stop offset="1" stop-color="#55545a" stop-opacity=".15"/></linearGradient>
+<radialGradient id="glow"><stop offset="0" stop-color="#FFB347" stop-opacity=".55"/><stop offset="1" stop-color="#FFB347" stop-opacity="0"/></radialGradient>
+<linearGradient id="scorch" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#3a2a24" stop-opacity=".7"/><stop offset="1" stop-color="#3a2a24" stop-opacity="0"/></linearGradient>
+<filter id="gray"><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncR type="linear" slope="1.05" intercept="-0.02"/><feFuncG type="linear" slope="1.05" intercept="-0.02"/><feFuncB type="linear" slope="1.05" intercept="-0.02"/></feComponentTransfer></filter>
+<filter id="soft"><feGaussianBlur stdDeviation="1.1"/></filter>
+<pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="2" fill="#000" opacity=".18"/></pattern>
+<linearGradient id="card" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F1ECE6"/><stop offset="1" stop-color="#E2DCD3"/></linearGradient>
+</defs>`;
+
+// ---------- story ----------
+const tk=t=>t; // shortcut
+function kidS1(t){ // kitchen part 1, returns kid svg + extras
+  // walk in 0.2-2.6 from x 760 to 440
+  let x=mix(760,440,A(t,0.2,2.6)), walk=(t>0.2&&t<2.6)?(t*1.6)%1:null;
+  let o={x,y:520,s:0.86,face:'neutral',seed:1,blink:blinkAt(t,1)};
+  if(t>2.4&&t<3.4){o.face='bored';o.slump=A(t,2.4,2.8)}
+  if(t>=3.4) o.face='neutral';
+  // reach drawer 3.6-4.0, grip, pull 4.0-4.8
+  let aR=[-10,-8], aL=[12,10];
+  const reach=A(t,3.6,4.0);
+  if(t>=3.6&&t<5.8){aR=[mix(-10,-40,reach),mix(-8,-40,reach)];}
+  // look in 5.0, reach in 5.8, lift 6.2-6.8
+  if(t>=5.0&&t<6.4){o.lean=A(t,5.0,5.4)*-8*(1-A(t,6.2,6.6));o.lookY=6;}
+  let hold=null, boxOpen=0;
+  if(t>=5.8&&t<6.4){aR=[mix(-40,-30,A(t,5.8,6.1)),mix(-40,-30,A(t,5.8,6.1))]}
+  if(t>=6.25){ // holds box in right hand, raise to chest
+    const up=A(t,6.25,6.9); aR=[mix(-30,-35,up),mix(-30,-95,up)]; hold='box';
+  }
+  if(t>=6.8&&t<7.6){o.face='spark'}
+  // strike one 7.6-8.0 : left hand takes match from box, swipe
+  let matchL=0, flameL=0;
+  if(t>=7.3){ matchL=1; const sw=A(t,7.6,7.95); aL=[mix(12,-120,A(t,7.3,7.6)),mix(10,-30,A(t,7.3,7.6))+sw*-40]; flameL=A(t,7.95,8.15);}
+  if(t>=8.2) {o.face='grin';aL=[-140,-20];}
+  // blow out first at 9.0-9.2, second strike 9.4-9.8
+  if(t>=9.0&&t<9.6){flameL=1-A(t,9.0,9.2);o.mouth=t<9.2?0.5:0}
+  if(t>=9.4){const sw=A(t,9.45,9.75);aL=[mix(-140,-110,sw),mix(-20,-60,sw)];flameL=A(t,9.75,9.95);}
+  if(t>=10.0){o.face='grin';o.eyes='spark';}
+  // wave like wand 10.6-12.7 walking right 440->590
+  if(t>=10.6){const w=A(t,10.6,12.6);o.x=mix(440,590,w);if(t<12.6)walk=(t*1.6)%1;const ph=t*7;aL=[-150+Math.sin(ph)*35,-10+Math.cos(ph)*30];o.face=t<13.2?'grin':o.face}
+  // touch curtain 13.0-13.8 : arm extends to the right (flip so left arm faces right)
+  if(t>=12.9){aL=[mix(-150,-95,A(t,12.9,13.5)),mix(0,-5,A(t,12.9,13.5))];}
+  if(t>=14.0){o.face='shock';}
+  o.walk=walk;o.armL=aL;o.armR=aR;o.flip=true; // flipped: drawn facing right -> left arm becomes right side visually
+  o.holdR=(hx,hy)=> hold==='box'?matchBox(hx,hy-6,-10,A(t,7.1,7.4),0.8):'';
+  o.holdL=(hx,hy)=> matchL?matchStick(hx,hy,(aL[0]+aL[1])+180,flameL,t):'';
+  return o;
+}
+function scene(t){
+  let panel='', cam={s:1,x:540,y:304}, gray=false, over='', fine=null, title='';
+  const S=(a,b)=>t>=a&&t<b;
+  // ===== S1 kitchen setup 0-15.4
+  if(t<15.4){
+    const k=kidS1(t);
+    const fire=t>=14.0?A(t,14.0,14.4)*0.08:0;
+    panel+=kitchenRoom({drawer:A(t,4.0,4.8),fire,boxInDrawer:t<6.25});
+    panel+=person(k,KID);
+    if(t>=6.8&&t<7.6) over+=badge(760,90,'!',{sc:popS(t,6.8),fs:40,bg:'#fff'});
+    cam={s:(t<2.6?mix(1.0,1.45,A(t,1.2,3.2)):1.45)+A(t,3,15.4)*0.08,x:t<2.6?mix(540,k.x+60,A(t,1.2,3.2)):mix(k.x+60,k.x+130,A(t,12.5,14.2)),y:mix(304,320,A(t,2,4))};
+  }
+  // ===== S2 tiny flame / panic / blanket / closet 15.4-26.0
+  else if(t<26.0){
+    const fire=mix(0.08,0.14,A(t,15.4,22))*(t<23.0?1:1);
+    const blanket=t>=23.05;
+    let kx=600, kface='panic', aL=[-20,-150], aR=[20,150], walk=null, flip=true, closet=0, hideK=false, shake=0;
+    if(t<16.6){kface='shock';aL=[-60,-20];aR=[10,10]}
+    if(t>=16.6&&t<21.8){aL=[-150,-30];aR=[150,30];shake=0.6} // hands to cheeks
+    if(t>=21.8&&t<23.1){ // grab blanket (from chair left) & throw
+      const g1=A(t,21.8,22.4), g2=A(t,22.5,23.0); kx=mix(600,560,g1)+g2*30; aL=[mix(-60,-170,g2),mix(-20,0,g2)]; aR=[mix(10,-170,g2),mix(10,0,g2)]; kface='scared';}
+    if(t>=23.1&&t<25.4){ const r=A(t,23.3,24.4); kx=mix(590,930,r); walk=(t*2.2)%1; aL=[30*Math.sin(t*14),10];aR=[-30*Math.sin(t*14),-10]; kface='scared';closet=A(t,24.0,24.4)*(1-A(t,24.9,25.3)); if(t>24.75) hideK=true;}
+    if(t>=25.4) {hideK=true;closet=0}
+    panel+=kitchenRoom({fire:blanket?0:fire,blanket,closetOpen:closet,boxInDrawer:false,drawer:1});
+    if(!blanket && t>=21.8) panel+=`<g transform="translate(${mix(470,0,0)},0)"></g>`;
+    if(t<22.6) panel+=`<path d="M240,${470} L270,380 L360,380 L380,470Z" fill="#6E8FCB" stroke="#3D4F78" stroke-width="4" opacity="${t<22.4?1:0}"/>`;
+    if(t>=22.4&&t<23.05){const k=A(t,22.5,23.05);panel+=`<g transform="translate(${mix(560,770,k)},${mix(260,320,k)-Math.sin(k*Math.PI)*60}) rotate(${k*40})"><path d="M-60,-40 L60,-46 L66,50 L-66,44Z" fill="#6E8FCB" stroke="#3D4F78" stroke-width="4"/></g>`}
+    if(!hideK) panel+=person({x:kx,y:520,s:0.86,face:kface,armL:aL,armR:aR,walk,flip,shake,seed:1,sweat:t>17&&t<22,blink:blinkAt(t,1)},KID);
+    if(blanket && t<25.4 && t>=23.0) {}
+    // thought bubble
+    const bs=S(17.0,21.9)?popS(t,17.0)*(1-A(t,21.5,21.9)):0;
+    over+=bubble(330,215,300,170,momAngryFace()+icon('grounded',80,-20,popS(t,18.4)*0.9)+icon('cap',90,46,popS(t,20.2)*0.8),bs);
+    cam={s:mix(1.7,1.45,A(t,15.4,16.6))+A(t,16.6,21.8)*0.07,x:mix(720,610,A(t,15.4,17)),y:mix(320,300,A(t,15.4,17))};
+    if(t>=21.8) cam={s:mix(1.52,1.2,A(t,21.8,23.4)),x:mix(610,760,A(t,22,25)),y:300};
+  }
+  // ===== closet interior whisper 26.0-29.3
+  else if(t<29.3){
+    panel+=closetInside({});
+    const m=envOf('kid');
+    panel+=kidHug({x:540,y:540,s:1.15,face:'scared',mouth:m,blink:blinkAt(t,2),lookX:6});
+    cam={s:1.0+A(t,26,29.3)*0.08,x:560,y:320};
+  }
+  // ===== S3 fire grows 29.3-36.3, alarm, closet smoke till 38.4
+  else if(t<38.4){
+    if(t<35.6){
+      const burst=A(t,29.4,30.2), grow=A(t,30.6,33.0);
+      const fire=t<29.4?0:mix(0.15,0.55,burst)+grow*0.5;
+      const sm=A(t,32.8,35.6)*0.75;
+      panel+=kitchenRoom({fire,blanket:t<30.0,closetOpen:0,drawer:1,alarm:t>34.4,closetSmoke:A(t,34,35.5)*0.8,curtainGone:false});
+      panel+=smokeLayer(sm,t);
+      const ts=t>=30.6&&t<33.0? '0:30':(t>=33.0?'1:00':'');
+      if(ts) over+=badge(540,48,ts,{sc:popS(t,ts==='0:30'?30.6:33.0),bg:'#E5383B',fg:'#fff',fs:34});
+      cam={s:mix(1.35,1.12,A(t,29.3,31.5))+A(t,31.5,35.6)*0.06,x:mix(760,690,A(t,30,35)),y:300+Math.sin(t*20)*(t>34.4?1.5:0)};
+    } else {
+      panel+=closetInside({smoke:A(t,35.6,37)*1,firelight:true});
+      const c=Math.max(0,Math.sin((t-35.8)*9))*(t>35.9?1:0);
+      panel+=kidHug({x:540,y:540,s:1.15,face:'scared',cough:c,mouth:c*0.6,blink:0,lookX:8});
+      over+=badge(820,60,'BEEP! BEEP!',{sc:popS(t,35.7)*(Math.floor(t*4)%2?1:0.94),bg:'#E5383B',fg:'#fff',fs:28});
+      cam={s:1.06+A(t,35.6,38.4)*0.06,x:560,y:320};
+    }
+  }
+  // ===== S4 Mr Fine pause 38.4-57.9 (freeze on smoky room)
+  else if(t<57.9){
+    gray=true;
+    const Tf=35.2; const keepT=T; T=Tf;
+    panel+=kitchenRoom({fire:1.0,closetOpen:0,drawer:1,alarm:false,closetSmoke:0.8});
+    panel+=smokeLayer(0.55,Tf); T=keepT;
+    // highlights during pause
+    if(t>=51.4&&t<55.6) panel+=`<circle cx="935" cy="295" r="${120+Math.sin(t*6)*4}" fill="none" stroke="#fff" stroke-width="8" stroke-dasharray="18 12" opacity="${A(t,51.4,51.7)}"/>`;
+    over+=stampX(935,295,60,t>=52.6&&t<55.6?popS(t,52.6):0);
+    if(t>=53.6&&t<55.6){const k=A(t,53.6,54.4);over+=`<path d="M720,${200} C800,${150} 860,${200} ${mix(720,880,k)},${mix(200,420,k)}" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-dasharray="6 18"/>`}
+    // PAUSED badge
+    over+=`<g opacity="${A(t,38.4,38.6)}"><rect x="34" y="34" width="14" height="46" fill="#fff"/><rect x="58" y="34" width="14" height="46" fill="#fff"/><text x="88" y="70" font-size="30" font-weight="800" fill="#fff">PAUSED</text></g>`;
+    if(t>=42.5) over+=badge(540,58,'THIS IS REAL',{sc:popS(t,42.5),fs:28});
+    // icons one match + one curtain = fire
+    const ic=t>=44.0&&t<47.0;
+    if(ic){over+=`<g transform="translate(700,250)">`+icon('match',-150,0,popS(t,44.1))+(t>44.5?`<text x="-75" y="16" text-anchor="middle" font-size="60" font-weight="800" fill="#fff" stroke="#000" stroke-width="6" paint-order="stroke">+</text>`:'')+icon('curtain',0,0,popS(t,44.8))+(t>45.6?`<text x="80" y="16" text-anchor="middle" font-size="60" font-weight="800" fill="#fff" stroke="#000" stroke-width="6" paint-order="stroke">=</text>`:'')+icon('fire',170,0,popS(t,45.7))+`</g>`}
+    if(t>=47.1&&t<51.2) over+=badge(700,250,'&lt; 30 SECONDS',{sc:popS(t,47.2)*(1+0.03*Math.sin(t*8)),fs:48,bg:'#E5383B',fg:'#fff'});
+    // Mr Fine walks in from left
+    const wi=A(t,38.4,39.3), fx=mix(-120,175,wi);
+    const m=envOf('fine');
+    let o={x:fx,y:575,s:0.86,mouth:m,walk:t<39.3?(t*2)%1:null,armL:[14,8],armR:[-14,-8],handR:'remote'};
+    if(t>=38.5&&t<39.4){o.armL=[-160+Math.sin(t*16)*16,-10]} // wave Hi
+    if(t>=40.2&&t<41.2){o.armR=[100,40];o.press=t>40.6&&t<40.8}
+    if(t>=44.0&&t<46.6){o.armR=[110,-10];o.handR='point'}
+    if(t>=47.0&&t<51.0){o.worried=true}
+    if(t>=51.4&&t<55.6){o.armR=[110,-10];o.handR='point'}
+    if(t>=56.4){o.armR=[100,40];o.press=t>56.9&&t<57.2}
+    fine=o;
+    cam={s:1.0+A(t,38.4,57.9)*0.09+Math.sin(t*0.5)*0.008,x:mix(540,600,A(t,38.4,57.9)),y:304};
+  }
+  // ===== S5 rewind 57.9-59.4
+  else if(t<59.4){
+    const k=L(t,57.9,59.4); const back=mix(35.0,6.8,Math.pow(k,0.8));
+    const keepT=T; T=back;
+    const fire=back>=30.6?mix(0.15,1,A(back,30.6,33)):(back>=14?0.1:0);
+    panel+=kitchenRoom({fire,drawer:back>4.8?1:A(back,4,4.8),blanket:back>23&&back<30,boxInDrawer:back<6.25});
+    panel+=smokeLayer(back>32.8?A(back,32.8,35.6)*0.75:0,back);
+    if(back<15.4) panel+=person(kidS1(back),KID);
+    T=keepT;
+    gray=k<0.5;
+    over+=`<g><path d="M40,40 L60,58 L40,76Z M64,40 L84,58 L64,76Z" fill="#fff" transform="rotate(180,62,58)"/><text x="100" y="70" font-size="30" font-weight="800" fill="#fff">REWIND</text></g>`;
+    for(let i=0;i<5;i++){const yy=(i*137+t*900)%608;over+=`<rect x="0" y="${yy}" width="1080" height="${6+i%3*4}" fill="#fff" opacity=".18"/>`}
+    fine={x:175,y:575,s:0.86,armR:[100,40],handR:'remote',press:true,mouth:0};
+    cam={s:1.02,x:540+Math.sin(t*50)*4,y:304};
+  }
+  // ===== S6 put it back + what-if 59.4-76.4
+  else if(t<76.4){
+    const m=envOf('fine');
+    if(t<69.0){
+      // kitchen, kid at counter holding box
+      let aR=[-84,-40], hold=true, face='neutral', drawer=1, boxIn=false;
+      if(t>=63.9&&t<64.9) face='neutral';
+      if(t>=64.9){ const p=A(t,64.9,65.4); aR=[mix(-84,-40,p),mix(-40,-40,p)]; if(t>65.35){hold=false;boxIn=true;} drawer=1-A(t,65.5,66.0); if(t>65.5) aR=[mix(-40,-30,A(t,65.5,66)),-30]; }
+      if(t>=66.1){aR=[-12,-10];face='proud'}
+      const kidO={x:450,y:520,s:0.86,face,armR:aR,armL:[12,10],flip:true,seed:1,blink:blinkAt(t,1),lookY:t<65.4?6:0};
+      kidO.holdR=(hx,hy)=>hold?matchBox(hx,hy-6,-10,0,0.8):'';
+      panel+=kitchenRoom({drawer,boxInDrawer:boxIn});
+      panel+=person(kidO,KID);
+      if(t>=59.4&&t<63.9) over+=badge(760,70,'SAME SATURDAY',{sc:popS(t,59.5),fs:26,bg:'#fff'});
+      if(t>=66.0&&t<67.6) over+=badge(760,70,"FIRE DOESN'T PLAY",{sc:popS(t,66.0),fs:28});
+      if(t>=67.6&&t<69.0) over+=badge(760,70,'IT SPREADS',{sc:popS(t,67.6),fs:30,bg:'#E5383B',fg:'#fff'});
+      fine={x:175,y:575,s:0.86,mouth:m,armR:t>66&&t<67.6?[160+Math.sin(t*10)*10,0]:[-14,-8],handR:t>66&&t<67.6?'point':'',smile:t>65.4&&t<66};
+      cam={s:mix(1.3,1.42,A(t,59.4,66)),x:mix(560,520,A(t,59.4,66)),y:320};
+    } else {
+      // WHAT IF scene: curtain fire, kid in room
+      panel+=kitchenRoom({fire:0.45,drawer:0});
+      let face='scared', aL=[-20,10], aR=[20,-10];
+      const yell=t>=72.6;
+      if(yell){face='yell';aL=[-150,-40];aR=[150,40]}
+      const km=envOf('kid');
+      panel+=person({x:560,y:520,s:0.86,face,armL:aL,armR:aR,mouth:yell?Math.max(km,t>73.9?0.2:0):0,flip:true,seed:1,blink:blinkAt(t,1)},KID);
+      over+=badge(760,60,'WHAT IF?',{sc:popS(t,69.0),fs:32,bg:'#fff'});
+      if(t>=70.8&&t<71.8){over+=icon('closet',935,300,1)+stampX(935,300,46,popS(t,70.9));}
+      if(t>=71.7&&t<72.6){over+=icon('blanket',760,300,popS(t,71.7))+stampX(760,300,46,popS(t,71.85));}
+      if(t>=73.9) over+=`<g transform="translate(700,170) scale(${popS(t,73.95)}) rotate(-8)"><text x="0" y="0" text-anchor="middle" font-size="84" font-weight="800" fill="#FFD23F" stroke="#2a2018" stroke-width="10" paint-order="stroke">FIRE!</text></g>`;
+      fine={x:175,y:575,s:0.86,mouth:m,armL:[14,8],armR:[-14,-8],worried:t<72.6};
+      cam={s:1.28+A(t,69,76.4)*0.08,x:680,y:300};
+    }
+  }
+  // ===== S7 get low + outside 76.4-81.6
+  else if(t<81.6){
+    const m=envOf('fine');
+    if(t<78.3){
+      panel+=kitchenRoom({fire:0.6,drawer:0});
+      panel+=smokeLayer(0.5,t);
+      const crouch=A(t,76.5,76.9);
+      if(crouch<1) panel+=person({x:560,y:520,s:0.86,face:'scared',armL:[-40,-60],armR:[40,60],flip:true,lean:crouch*30,seed:1},KID);
+      else panel+=kidCrawl({x:mix(560,820,A(t,76.9,78.3)),y:525,s:0.8,ph:(t*1.8)%1,face:'scared'});
+      over+=badge(760,330,'GET LOW',{sc:popS(t,76.6),fs:32});
+      over+=`<rect x="700" y="400" width="60" height="6" fill="none"/>`;
+    } else {
+      panel+=outsideHouse({});
+      const r=A(t,78.4,79.6); const kx=mix(640,860,r);
+      const phone=t>=79.8;
+      panel+=person({x:kx,y:560,s:0.72,face:phone?'neutral':'scared',walk:t<79.6?(t*2.2)%1:null,flip:true,armL:phone?[-150,-30]:[30*Math.sin(t*14),10],armR:[-14,-8],seed:2,blink:blinkAt(t,2),holdL:phone?(hx,hy)=>icon('phone',hx,hy-10,0.45):null},KID);
+      over+=badge(760,60,'GET OUT',{sc:popS(t,78.4),fs:30});
+      if(phone){over+=badge(640,560,'CALL THE FIRE DEPARTMENT',{sc:popS(t,79.9),fs:28,bg:'#E5383B',fg:'#fff'})+icon('truck',940,430,popS(t,80.2)*0.9)}
+    }
+    fine={x:175,y:575,s:0.86,mouth:m,armL:[14,8],armR:[-14,-8]};
+    cam={s:t<78.3?1.3:1.08,x:t<78.3?mix(640,760,A(t,76.5,78.3)):640,y:t<78.3?330:304};
+  }
+  // ===== S8 punchline 81.6-95.9
+  else if(t<95.9){
+    panel+=kitchenRoom({boxOnShelf:true,drawer:0});
+    const mw=A(t,81.6,82.8); const mx=mix(1150,830,mw);
+    const mm=envOf('mom'), km=envOf('kid');
+    let mface='neutral', look=0, mly=0;
+    if(t>=82.4&&t<87){mface='suspicious';look=-6;mly=-6}
+    if(t>=87){mface='happy'}
+    panel+=person({x:mx,y:540,s:0.95,face:mface,mouth:mm,walk:t<82.8?(t*1.8)%1:null,lookX:look,lookY:mly,tilt:t>82.6&&t<87?-8:0,armL:[20,10],armR:t<84.4?[-20,-30]:[-14,-8],seed:3,blink:blinkAt(t,3),holdR:t<84.4?(hx,hy)=>`<path d="M${hx-30},${hy-6} L${hx+30},${hy-6} L${hx+24},${hy+56} L${hx-24},${hy+56}Z" fill="#D9B07A" stroke="${OL}" stroke-width="4"/><circle cx="${hx-8}" cy="${hy-14}" r="12" fill="#E5383B" stroke="${OL}" stroke-width="3"/><path d="M${hx+10},${hy-6} L${hx+16},${hy-34}" stroke="#5E9B62" stroke-width="8" stroke-linecap="round"/>`:null},MOM);
+    if(t>=84.4) panel+=`<path d="M940,470 L1000,470 L995,528 L945,528Z" fill="#D9B07A" stroke="${OL}" stroke-width="4"/>`;
+    let kface='sheepish', aR=[-14,-8];
+    if(t>=86.9&&t<89.4){kface='proud';aR=[-40,-100]}
+    panel+=person({x:650,y:520,s:0.86,face:kface,mouth:km,flip:true,armR:aR,armL:[12,10],seed:1,blink:blinkAt(t,1)},KID);
+    if(t>=82.6&&t<86.6) panel+=`<circle cx="440" cy="136" r="${40+Math.sin(t*6)*3}" fill="none" stroke="#FFD23F" stroke-width="6"/>`;
+    const m=envOf('fine');
+    let o={x:175,y:575,s:0.86,mouth:m,armL:[14,8],armR:[-14,-8]};
+    if(t>=89.4&&t<91.2){o.armL=[-130,-30]}
+    if(t>=91.1&&t<94.6){o.armL=[-130,-30];o.armR=[130,30]}
+    if(t>=94.6){o.armR=[120,60];o.handR='thumb';o.thumbDir=1;o.wink=t>94.8&&t<95.6;o.smile=true}
+    fine=o;
+    if(t>=89.4&&t<95.8){ over+=badge(460,60,'BORING SATURDAY? ✓',{sc:popS(t,89.5),fs:26,bg:'#fff'}); if(t>=91.0) over+=badge(800,60,'HOUSE STANDING? ✓',{sc:popS(t,91.1),fs:26,bg:'#fff'}); }
+    cam={s:1.25+A(t,81.6,95.9)*0.06,x:mix(720,660,A(t,81.6,89)),y:300};
+  }
+  // ===== S9 tip 95.9-106.9
+  else if(t<106.9){
+    panel+=kitchenRoom({drawer:0,boxOnShelf:true});
+    panel+=`<rect x="0" y="0" width="1080" height="608" fill="#1b1622" opacity=".78" transform="scale(2) translate(-270,-150)"/>`;
+    const m=envOf('fine');
+    let o={x:180,y:575,s:0.95,mouth:m,armL:[14,8],armR:[-14,-8],smile:false};
+    if(t>=96.3&&t<98.4){o.armR=[120,-10];o.handR='point'}
+    if(t>=99.3&&t<101.0){o.armR=[90,10]}
+    if(t>=102.2&&t<106.7){o.armR=[120,-10];o.handR='point'}
+    fine=o;
+    const rows=[[96.35,"NOT TOYS",'#fff',()=>icon('match',-36,-6,.85)+icon('lighter',34,4,.85)+stampX(46,-28,22,popS(t,96.9))],
+                [99.35,'GIVE TO AN ADULT','#fff',()=>icon('hand',0,0,.8)],
+                [102.26,'GET LOW · GET OUT · STAY OUT','#F6C945',()=>''],
+                [104.98,'CALL THE FIRE DEPARTMENT','#E5383B',()=>icon('truck',0,0,.6)]];
+    rows.forEach(([ts,txt,bg,ic],i)=>{ if(t<ts) return; const sc=popS(t,ts); const y=95+i*138;
+      over+=`<g transform="translate(0,${y})">${ic().length?`<g transform="translate(470,0)">${g(`scale(${sc*1.1})`,ic())}</g>`:''}${badge(780,0,txt,{sc,fs:i==2?26:30,bg,fg:bg==='#E5383B'?'#fff':'#2a2018'})}</g>`});
+    cam={s:1.0,x:540,y:304};
+  }
+  // ===== S10 end card
+  else {
+    panel+=`<rect x="0" y="0" width="1080" height="608" fill="url(#card)"/>`;
+    const k=popS(t,107.0);
+    panel+=`<g opacity="${A(t,106.9,107.2)}"><text x="700" y="220" text-anchor="middle" font-size="88" font-weight="800" fill="#1f1b24">MR FINE</text>
+      <text x="700" y="296" text-anchor="middle" font-size="44" font-weight="700" fill="#1f1b24" opacity="${A(t,107.1,107.4)}">Boredom passes.</text>
+      <g transform="translate(700,380) scale(${popS(t,108.4)})"><text x="0" y="0" text-anchor="middle" font-size="64" font-weight="800" fill="#E8648F">FIRE DOESN'T.</text></g></g>`;
+    const m=envOf('fine');
+    fine={x:240,y:540,s:1.0,mouth:m,armR:[120,60],handR:'thumb',thumbDir:1,wink:t>108.6&&t<109.6,smile:true};
+    cam={s:1.0+A(t,106.9,113.4)*0.03,x:540,y:304};
+  }
+  if(fine) over=mrFine(fine)+over;  // Mr Fine sits in panel space but outside camera zoom
+  return {panel,cam,gray,over};
+}
+
+function render(t){
+  T=t;
+  const sc=scene(t);
+  const c=sc.cam; const tr=`translate(540,304) scale(${c.s}) translate(${-c.x},${-c.y})`;
+  let base=g(tr,sc.panel);
+  if(sc.gray) base=`<g filter="url(#gray)">${base}</g><rect width="1080" height="608" fill="url(#scan)"/>`;
+  let panelInner=base+sc.over;
+  const tilt=sc.gray? -0.6:0;
+  let s=DEFS;
+  s+=`<rect width="1080" height="1920" fill="#08070a"/>`;
+  s+=`<g transform="translate(0,652) rotate(${tilt},540,304)"><g clip-path="url(#pc)">${panelInner}</g></g>`;
+  // banner
+  s+=`<rect x="160" y="474" width="760" height="172" rx="12" fill="#DC273B"/>
+      <text x="540" y="548" text-anchor="middle" font-size="64" font-weight="800" fill="#fff" letter-spacing="-1">WHAT HAPPENS IF YOU</text>
+      <text x="540" y="620" text-anchor="middle" font-size="64" font-weight="800" fill="#fff" letter-spacing="-1">PLAY WITH MATCHES?</text>`;
+  s+=captions(t);
+  document.getElementById('v').innerHTML=s;
+}
+window.render=render;
+</script></body></html>
