@@ -82,7 +82,7 @@ for k in np.arange(a7+0.5,D,1.37):
     n=int(.12*sr);tt=np.arange(n)/sr;add(fx,k+rng.random()*0.4,np.sin(2*np.pi*(1200-4000*tt)*tt)*env(n,.001,.03)*.12)
 th=wT('a7','third');n=int(4*sr);tt=np.arange(n)/sr;add(fx,th-0.2,np.sign(np.sin(2*np.pi*100*tt))*0.05*np.sin(np.pi*tt/4))
 # choices whoosh + end hit
-for w in ['a:','b:']:
+for w in ['open','or']:
     n=int(.5*sr);add(fx,wT('a8',w)-0.2,lp(rng.standard_normal(n),40)*np.sin(np.pi*np.arange(n)/n)**2*3)
 n=int(3*sr);tt=np.arange(n)/sr;add(fx,END('a8')+0.05,lp(sum(np.sign(np.sin(2*np.pi*f*tt))*a for f,a in ((36.7,1),(55,.8)))*env(n,.01,1.0)*.18,8))
 # voice

@@ -8,7 +8,7 @@ T={
 'a5':"You check what you have. *Water:* one bottle. *Light:* your phone, *23%.* *Next* *station:* 400 meters. *The* *door:* closed. On paper, it's not that bad. There was only *one* *problem.*",
 'a6':"The lock on that door was *broken.* It was only holding because nobody had pulled the *handle* yet. And now, slowly... *someone* *was.*",
 'a7':"*Real* *fact:* many modern subway tunnels have an *emergency* *exit* or a cross passage every few hundred meters. But *never* touch the *third* *rail.* It can still be *live.*",
-'a8':"So. *A:* open the emergency door and run into the dark tunnel. Or *B:* block the door with everything you have, and wait for help. *Comment* *A* or *B.* Part two tomorrow."}
+'a8':"So, *what* *would* *you* *do?* Open the emergency door and run into the dark tunnel... or block it with everything you have, and wait for help? *Tell* *me* in the comments. Part two tomorrow."}
 SR=24000;GAP_MAX=0.32
 def load(n):
     w=wave.open(f'audio/{n}.wav');sr=w.getframerate();x=np.frombuffer(w.readframes(w.getnframes()),np.int16).astype(float)/32768;return x,sr

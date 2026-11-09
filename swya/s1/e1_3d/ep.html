@@ -140,11 +140,13 @@ function render(t){
    o+=`</g>`}
  if(t>=a6&&t<a7){if(t>wT('a6','broken'))o+=tag(540,260,'🔒 LOCK: BROKEN','#E5383B','#fff',pop(t,wT('a6','broken')),46);if(t>wT('a6','slowly'))o+=tag(540,380,'↓ HANDLE MOVING','#111','#fff',pop(t,wT('a6','slowly')),34)}
  if(t>=a7&&t<a8){o+=tag(540,160,'REAL FACT','#fff','#111',pop(t,a7+.1),30);if(t>wT('a7','emergency'))o+=tag(540,260,'🚪 EXIT EVERY FEW HUNDRED METERS','#1aa64a','#fff',pop(t,wT('a7','emergency')),30);if(t>wT('a7','third'))o+=tag(540,360,'⚡ THIRD RAIL CAN BE LIVE','#FFD23F','#111',pop(t,wT('a7','third')),32)}
- if(t>=a8){const ta=wT('a8','a:'),tb=wT('a8','b:'),tc=wT('a8','comment');o+=`<rect width="1080" height="1920" fill="#000" opacity=".5"/>`;
-   const card=(y,Lt,txt,col,k,hi)=>k<=0?'':`<g transform="translate(540,${y}) scale(${k*(hi?1+.035*Math.sin(t*6):1)})"><rect x="-480" y="-125" width="960" height="250" rx="28" fill="#111418" stroke="${col}" stroke-width="8"/><rect x="-480" y="-125" width="200" height="250" rx="28" fill="${col}"/><text x="-380" y="48" text-anchor="middle" font-size="150" font-weight="800" fill="#fff">${Lt}</text>${txt.map((l,i)=>`<text x="-250" y="${-16+i*60}" font-size="48" font-weight="800" fill="#fff">${l}</text>`).join('')}</g>`;
-   o+=tag(540,260,'WHAT DO YOU DO?','#fff','#111',pop(t,a8+.1),48);
-   o+=card(560,'A',['OPEN THE EMERGENCY','DOOR AND RUN'],'#E5383B',pop(t,ta,.3),t>tc);o+=card(860,'B',['BLOCK THE DOOR','AND WAIT FOR HELP'],'#2F7BE5',pop(t,tb,.3),t>tc);
-   if(t>tc)o+=tag(540,1660,'💬 COMMENT  A  OR  B','#FFD23F','#111',pop(t,tc),48);
+ if(t>=a8){const ta=wT('a8','open'),tb=wT('a8','or'),tc=wT('a8','tell');o+=`<rect width="1080" height="1920" fill="#000" opacity=".55"/>`;
+   const opt=(y,txt,col,k)=>k<=0?'':`<g transform="translate(540,${y}) scale(${k})"><rect x="-470" y="-110" width="940" height="220" rx="26" fill="#111418" stroke="${col}" stroke-width="7"/>${txt.map((l,i)=>`<text x="0" y="${-14+i*62}" text-anchor="middle" font-size="50" font-weight="800" fill="#fff">${l}</text>`).join('')}</g>`;
+   o+=tag(540,330,'WHAT WOULD YOU DO?','#FFD23F','#111',pop(t,a8+.2,.3),62);
+   o+=opt(620,['🚪 OPEN THE EMERGENCY DOOR','AND RUN INTO THE TUNNEL…'],'#E5383B',pop(t,ta,.3));
+   if(t>tb)o+=`<text x="540" y="812" text-anchor="middle" font-family="DejaVu Serif" font-style="italic" font-size="64" fill="#fff" opacity="${A(t,tb,tb+.3)}">…or</text>`;
+   o+=opt(1000,['🪑 BLOCK IT AND','WAIT FOR HELP?'],'#2F7BE5',pop(t,tb+.25,.3));
+   if(t>tc)o+=tag(540,1620,'💬 TELL ME IN THE COMMENTS','#fff','#111',pop(t,tc)*(1+.03*Math.sin(t*6)),46);
    if(t>END('a8')){const k=A(t,END('a8'),END('a8')+0.4);o+=`<g opacity="${k}"><rect width="1080" height="1920" fill="#06070a"/><text x="540" y="860" text-anchor="middle" font-family="DejaVu Serif" font-style="italic" font-size="50" fill="#aab">part 2</text><text x="540" y="970" text-anchor="middle" font-size="96" font-weight="800" fill="#fff">THE DARK</text><text x="540" y="1080" text-anchor="middle" font-size="96" font-weight="800" fill="#E5383B">TUNNEL</text><text x="540" y="1160" text-anchor="middle" font-size="34" font-weight="600" fill="#889">follow to survive</text></g>`}}
  o+=`<defs><radialGradient id="vg" cx=".5" cy=".45" r=".75"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".8"/></radialGradient></defs><rect width="1080" height="1920" fill="url(#vg)"/>`;
  if(t<END('a8'))o+=captions(t);
