@@ -1,0 +1,169 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#000;width:1080px;height:1920px;overflow:hidden}text{font-family:Inter,sans-serif}</style>
+<script src="tl.js"></script></head><body>
+<svg id="v" width="1080" height="1920" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg"></svg>
+<script>
+const cl=(v,a=0,b=1)=>Math.max(a,Math.min(b,v)), sm=v=>{v=cl(v);return v*v*(3-2*v)}, A=(t,a,b)=>sm((t-a)/(b-a)), mix=(a,b,k)=>a+(b-a)*k;
+const pop=(t,a,d=.25)=>{const k=cl((t-a)/d);return k<=0?0:sm(k)*(1+.15*Math.sin(k*Math.PI))};
+const rnd=i=>{const x=Math.sin(i*127.1)*43758.5;return x-Math.floor(x)};
+const C=TL.clips.reduce((o,c)=>(o[c.n]=c,o),{});
+function wordT(clip,word,nth=0){let k=0;for(const ch of TL.chunks){if(ch.s<C[clip].start-0.01||ch.s>C[clip].start+C[clip].dur)continue;for(const w of ch.w){if(w[0].toLowerCase().startsWith(word.toLowerCase())){if(k++==nth)return w[2]}}}return C[clip].start}
+const OL='#07080b';
+const DEFS=`<defs>
+<radialGradient id="vig" cx=".5" cy=".45" r=".75"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".85"/></radialGradient>
+<linearGradient id="floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a3f48"/><stop offset="1" stop-color="#1c1f25"/></linearGradient>
+<linearGradient id="ceil" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#cfd6de"/><stop offset="1" stop-color="#8a939e"/></linearGradient>
+<linearGradient id="wallL" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9aa3ad"/><stop offset="1" stop-color="#c4cbd3"/></linearGradient>
+<linearGradient id="wallR" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="#8b949f"/><stop offset="1" stop-color="#bcc4cc"/></linearGradient>
+<linearGradient id="paper" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f0e6"/><stop offset="1" stop-color="#e6e0d2"/></linearGradient>
+<radialGradient id="torch" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".92"/></radialGradient>
+<pattern id="lines" width="40" height="52" patternUnits="userSpaceOnUse"><path d="M0,51 L40,51" stroke="#b9c7d6" stroke-width="2"/></pattern>
+<filter id="blur"><feGaussianBlur stdDeviation="6"/></filter>
+<filter id="glow"><feGaussianBlur stdDeviation="10"/></filter>
+</defs>`;
+const VP=[540,760];let PS=1.5;
+function P(x,y,z){const f=PS*600/(600+z);return [VP[0]+(x)*f, VP[1]+(y)*f]} // x,y in world units around VP, z depth
+function quad(a,b,c,d,fill,extra=''){return `<path d="M${a} L${b} L${c} L${d} Z" fill="${fill}" ${extra}/>`}
+const pt=p=>p.join(',');
+// ---------- subway car interior ----------
+function carInterior(o){
+  const t=o.t; let s='';
+  const W=520,H=560,Hc=-640,Z=3600; // half width, floor y, ceiling y
+  const fl=[P(-W,H,-260),P(W,H,-260),P(W,H,Z),P(-W,H,Z)], ce=[P(-W,Hc,-260),P(W,Hc,-260),P(W,Hc,Z),P(-W,Hc,Z)];
+  const lit=o.light; // 0..1 white light, red overlay separate
+  s+=quad(pt(fl[0]),pt(fl[1]),pt(fl[2]),pt(fl[3]),'url(#floor)');
+  s+=quad(pt(ce[0]),pt(ce[1]),pt(ce[2]),pt(ce[3]),'url(#ceil)');
+  s+=quad(pt(ce[0]),pt(ce[3]),pt(fl[3]),pt(fl[0]),'url(#wallL)');
+  s+=quad(pt(ce[1]),pt(ce[2]),pt(fl[2]),pt(fl[1]),'url(#wallR)');
+  // floor stripes
+  for(let z=0;z<Z;z+=300){const a=P(-W,H,z),b=P(W,H,z);s+=`<path d="M${pt(a)} L${pt(b)}" stroke="#2a2e35" stroke-width="${3*600/(600+z)}"/>`}
+  // ceiling lights
+  for(let z=200;z<Z;z+=500){const a=P(-120,Hc,z),b=P(120,Hc,z),c=P(120,Hc,z+260),d=P(-120,Hc,z+260);s+=quad(pt(a),pt(b),pt(c),pt(d),lit>0.5?'#f6fbff':'#5d6470')}
+  // windows both sides with tunnel outside
+  for(let z=150;z<Z-300;z+=700){
+    [-1,1].forEach(side=>{const x=side*W;const a=P(x,-420,z),b=P(x,-420,z+460),c=P(x,-40,z+460),d=P(x,-40,z);
+      s+=quad(pt(a),pt(b),pt(c),pt(d),'#0d1117','stroke="#6c747e" stroke-width="'+(10*600/(600+z))+'"');
+      // passing tunnel lights
+      if(o.speed>0.01){for(let k=0;k<2;k++){const ph=((t*o.speed*1.2+k*.5+z*.0003)%1);const zz=z+460*(side>0?ph:1-ph);const q=P(x,-230,zz);s+=`<circle cx="${q[0]}" cy="${q[1]}" r="${10*600/(600+zz)}" fill="#ffcf7a" opacity=".9"/>`}}
+      else{const q=P(x,-230,z+230);s+=`<circle cx="${q[0]}" cy="${q[1]}" r="${8*600/(600+z)}" fill="#ffcf7a" opacity=".35"/>`}
+    });
+  }
+  // seats
+  for(let z=100;z<Z-400;z+=700){[-1,1].forEach(side=>{const x0=side*W,x1=side*(W-170);
+    const a=P(x0,160,z),b=P(x1,160,z),c=P(x1,160,z+520),d=P(x0,160,z+520);s+=quad(pt(a),pt(b),pt(c),pt(d),'#2e5aa8');
+    const e=P(x1,160,z),f=P(x1,H,z),g=P(x1,H,z+520),h=P(x1,160,z+520);s+=quad(pt(e),pt(f),pt(g),pt(h),'#203f78');
+    const i=P(x0,-60,z),j=P(x0,160,z),k=P(x0,160,z+520),l=P(x0,-60,z+520);s+=quad(pt(i),pt(j),pt(k),pt(l),'#3566bd');
+  })}
+  // poles
+  for(let z=550;z<Z-300;z+=700){[-1,1].forEach(side=>{const a=P(side*300,Hc,z),b=P(side*300,H,z);s+=`<path d="M${pt(a)} L${pt(b)}" stroke="#d9dee4" stroke-width="${16*600/(600+z)}" stroke-linecap="round"/>`})}
+  // far end wall + door
+  const ew=[P(-W,Hc,Z),P(W,Hc,Z),P(W,H,Z),P(-W,H,Z)]; s+=quad(pt(ew[0]),pt(ew[1]),pt(ew[2]),pt(ew[3]),'#a7afb8');
+  const dw=[P(-170,-380,Z),P(170,-380,Z),P(170,H,Z),P(-170,H,Z)]; s+=quad(pt(dw[0]),pt(dw[1]),pt(dw[2]),pt(dw[3]),'#7b848f','stroke="#4b525b" stroke-width="3"');
+  const gw=[P(-110,-320,Z),P(110,-320,Z),P(110,-60,Z),P(-110,-60,Z)]; s+=quad(pt(gw[0]),pt(gw[1]),pt(gw[2]),pt(gw[3]),o.redDoor?'#2a0b0b':'#1a1f27');
+  // passengers (low-poly silhouettes)
+  (o.people||[]).forEach(p=>{const q=P(p.x,160,p.z),f=PS*600/(600+p.z);const look=p.look||0;
+    s+=`<g transform="translate(${q[0]},${q[1]}) scale(${f})"><path d="M-55,0 L-60,-180 Q-60,-215 -30,-220 L30,-220 Q60,-215 60,-180 L55,0 Z" fill="${p.c}"/><path d="M-50,0 L-50,140 L-15,140 L-15,30 L15,30 L15,140 L50,140 L50,0 Z" fill="#22252b"/><circle cx="${look*6}" cy="-265" r="42" fill="#c99d7c"/><path d="M-42,-275 Q0,-330 42,-275 Q20,-290 -42,-275Z" fill="#2b221d"/>${p.phone?`<rect x="-14" y="-150" width="28" height="44" rx="5" fill="#111"/><rect x="-10" y="-146" width="20" height="34" fill="${p.phone}"/>`:''}</g>`});
+  return s;
+}
+// ---------- door close-up ----------
+function doorClose(o){const t=o.t;let s=`<rect width="1080" height="1920" fill="#8f98a2"/>`;
+  s+=`<rect x="0" y="1500" width="1080" height="420" fill="#262a31"/>`;
+  const sh=o.shake||0;s+=`<g transform="translate(${sh*Math.sin(t*90)*14},${sh*Math.cos(t*70)*6})">`;
+  s+=`<rect x="250" y="380" width="580" height="1140" rx="14" fill="#6f7883" stroke="#3a4048" stroke-width="10"/>`;
+  s+=`<rect x="330" y="470" width="420" height="420" rx="10" fill="${o.red?'#240707':'#141a22'}" stroke="#3a4048" stroke-width="10"/>`;
+  // silhouette behind glass
+  if(o.fig>0){const fx=540+Math.sin(t*1.7)*30;s+=`<g opacity="${o.fig}" clip-path="url(#gl)"><circle cx="${fx}" cy="640" r="85" fill="#050608"/><path d="M${fx-150},900 Q${fx-140},740 ${fx},730 Q${fx+140},740 ${fx+150},900Z" fill="#050608"/>${o.hand?`<path d="M${fx+60},${560-o.hand*40} l30,-60 l14,6 l-14,58 l40,-50 l12,8 l-36,56 l44,-30 l8,12 l-60,44 z" fill="#4d5a45"/>`:''}</g>`}
+  s+=`<clipPath id="gl"><rect x="335" y="475" width="410" height="410"/></clipPath>`;
+  if(o.crack) s+=`<path d="M560,560 L520,620 L540,700 M560,560 L620,600 L660,580 M560,560 L590,500" stroke="#dfe7ef" stroke-width="4" fill="none" opacity=".8"/>`;
+  // handle
+  const ha=o.handle||0; s+=`<g transform="translate(720,1050) rotate(${ha})"><rect x="-10" y="-14" width="110" height="28" rx="14" fill="#c9ced4" stroke="#3a4048" stroke-width="5"/><circle r="26" fill="#b7bdc4" stroke="#3a4048" stroke-width="5"/></g>`;
+  // lock
+  s+=`<rect x="690" y="1130" width="64" height="90" rx="10" fill="#b39a4a" stroke="#3a4048" stroke-width="5"/><circle cx="722" cy="1165" r="10" fill="#3a4048"/>`;
+  if(o.broken) s+=`<path d="M690,1180 L754,1160" stroke="#E5383B" stroke-width="8"/>`;
+  s+=`</g>`;return s;}
+// ---------- tunnel ----------
+function tunnel(o){const t=o.t;PS=1.5;let s=`<rect width="1080" height="1920" fill="#06080b"/>`;
+  for(let i=0;i<14;i++){const z=((i*300-t*o.move*120)%4200+4200)%4200;const f=600/(600+z);const r=760*f;
+    s+=`<path d="M${540-r},${1000+620*f} L${540-r},${1000-300*f} Q540,${1000-900*f} ${540+r},${1000-300*f} L${540+r},${1000+620*f}" fill="none" stroke="#2b3038" stroke-width="${18*f}" opacity="${0.4+0.6*f}"/>`;}
+  // rails
+  [[-260,'#6b6f76'],[260,'#6b6f76'],[470,'#d8b23a']].forEach(([x,c],i)=>{const a=P(x,620,-250),b=P(x,620,4200);s+=`<path d="M${pt(a)} L${pt(b)}" stroke="${c}" stroke-width="22" ${i==2&&o.rail?'':''}/>`;if(i==2&&o.rail)s+=`<path d="M${pt(a)} L${pt(b)}" stroke="#ffd84a" stroke-width="50" opacity="${.35+.25*Math.sin(t*8)}" filter="url(#glow)"/>`});
+  for(let z=-240;z<4200;z+=160){const a=P(-380,640,z),b=P(380,640,z);s+=`<path d="M${pt(a)} L${pt(b)}" stroke="#2a2016" stroke-width="${26*600/(600+z)}"/>`}
+  // emergency sign on wall
+  if(o.sign){const q=P(-640,-120,900),f=600/(600+900);s+=`<g transform="translate(${q[0]},${q[1]}) scale(${f*2.2})"><rect x="-110" y="-46" width="220" height="92" rx="8" fill="#1aa64a" stroke="#fff" stroke-width="5"/><text x="-12" y="16" text-anchor="middle" font-size="44" font-weight="800" fill="#fff">EXIT</text><path d="M60,-20 L90,0 L60,20Z" fill="#fff"/></g><circle cx="${q[0]}" cy="${q[1]}" r="160" fill="#1aa64a" opacity=".18" filter="url(#glow)"/>`}
+  s+=`<rect width="1080" height="1920" fill="url(#torch)" opacity="${o.torch||0}"/>`;
+  return s;}
+// ---------- notebook ----------
+function notebook(o){const t=o.t;let s=`<rect width="1080" height="1920" fill="#0a0b0e"/>`;
+  s+=`<g transform="translate(540,880) rotate(-3) scale(${o.zoom||1})"><rect x="-430" y="-560" width="860" height="1120" fill="url(#paper)"/><rect x="-430" y="-560" width="860" height="1120" fill="url(#lines)" opacity=".8"/><path d="M-330,-560 L-330,560" stroke="#e48a8a" stroke-width="3"/>
+  <text x="-300" y="-440" font-family="DejaVu Serif" font-style="italic" font-size="54" fill="#2b2b3a">Survival check</text><path d="M-300,-420 L120,-420" stroke="#2b2b3a" stroke-width="3"/>`;
+  o.items.forEach((it,i)=>{const k=pop(t,it.t,.3);if(k<=0)return;const y=-300+i*170;
+    s+=`<g opacity="${cl(k)}"><text x="-300" y="${y}" font-family="DejaVu Serif" font-style="italic" font-size="50" fill="#22223a">${it.a}</text><text x="-20" y="${y}" font-family="DejaVu Serif" font-style="italic" font-size="50" fill="#22223a">${it.b}</text>
+      <g transform="translate(340,${y-16}) scale(${k})"><rect x="-70" y="-30" width="140" height="56" rx="10" fill="#1f9d55"/><text x="0" y="12" text-anchor="middle" font-size="30" font-weight="800" fill="#fff">OK</text></g></g>`});
+  if(o.stamp>0) s+=`<g transform="translate(40,420) rotate(-8) scale(${o.stamp})"><rect x="-260" y="-60" width="520" height="120" rx="12" fill="none" stroke="#1f9d55" stroke-width="10"/><text x="0" y="22" text-anchor="middle" font-size="64" font-weight="800" fill="#1f9d55">ALL GOOD?</text></g>`;
+  s+=`</g>`;
+  s+=`<rect width="1080" height="1920" fill="url(#vig)"/>`;return s;}
+// ---------- overlays ----------
+function tag(x,y,txt,bg,fg,sc,fs=34){if(sc<=0.01)return '';const w=txt.length*fs*.62+50,h=fs+30;
+  return `<g transform="translate(${x},${y}) scale(${sc})"><rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx="${h/2}" fill="${bg}"/><text x="0" y="${fs*.36}" text-anchor="middle" font-size="${fs}" font-weight="800" fill="${fg}" letter-spacing="1">${txt}</text></g>`}
+function captions(t){const c=TL.chunks.find(c=>t>=c.s-0.04&&t<c.e+0.12);if(!c)return '';
+  const k=cl((t-c.s+0.04)/0.1);let parts='';c.w.forEach(([w,hl,ws])=>{const col=hl?(/(red|scream|bit|bang|broken|never|third|rail)/i.test(w)?'#FF3B30':'#FFD23F'):'#FFFFFF';parts+=`<tspan fill="${col}">${w.toUpperCase().replace(/&/g,'&amp;')} </tspan>`});
+  return `<g transform="translate(540,1390) scale(${0.92+0.08*k})" opacity="${k}"><text x="0" y="0" text-anchor="middle" font-size="84" font-weight="800" stroke="#000" stroke-width="16" stroke-linejoin="round" paint-order="stroke" letter-spacing="-1">${parts}</text></g>`}
+// ---------- scenes ----------
+function scene(t){let bg='',ov='',cam={s:1,x:540,y:960,r:0};
+  const s1=C.s1.start,s2=C.s2.start,s3=C.s3.start,s4=C.s4.start,s5=C.s5.start,s6=C.s6.start,s7=C.s7.start;
+  const stopT=wordT('s1','stopped');
+  const people=[{x:-430,z:300,c:'#7a3b3b',look:1,phone:'#9ad'},{x:440,z:1000,c:'#3b5a3b',phone:'#9ad'},{x:-430,z:1700,c:'#4a4560'},{x:440,z:2400,c:'#6b5a3a'}];
+  if(t<s3-0.2){
+    const speed=t<stopT?1:Math.max(0,1-(t-stopT)/0.8);
+    const lightsOut=wordT('s2','lights'),redT=wordT('s2','red');
+    const light=t<lightsOut?1:0;
+    people.forEach((p,i)=>{p.look=t>wordT('s2','scream')?(i%2?1:-1):p.look;if(t>wordT('s2','signal')&&t<wordT('s2','video'))p.phone='#e33';if(t>=wordT('s2','video'))p.phone='#fff'});
+    bg+=carInterior({t,speed,light,people,redDoor:t>wordT('s2','scream')});
+    if(t>=lightsOut){bg+=`<rect width="1080" height="1920" fill="#000" opacity="${t<redT?0.82:0.5}"/>`;if(t>=redT)bg+=`<rect width="1080" height="1920" fill="#c0141b" opacity="${0.28+0.08*Math.sin(t*3)}"/>`}
+    if(t>stopT-0.3&&t<stopT+0.5) cam.r=Math.sin(t*60)*1.2*(1-A(t,stopT,stopT+.5));
+    cam.s=1+A(t,0,s3)*0.12+(t>wordT('s2','scream')?A(t,wordT('s2','scream'),s3)*0.25:0);cam.y=mix(960,880,A(t,wordT('s2','scream'),s3));
+    ov+=tag(540,140,'🕗 8:12 · BETWEEN STATIONS','#ffffff','#111',pop(t,1.2)*(t<s2+2?1:0),32);
+    if(t>wordT('s2','signal')){ov+=tag(330,140,'📶 NO SIGNAL','#E5383B','#fff',pop(t,wordT('s2','signal')),32);ov+=tag(760,140,'🔋 23%','#FFD23F','#111',pop(t,wordT('s2','signal')+.3),32)}
+    if(t>=wordT('s2','video')&&t<s3-0.3){ // phone close-up
+      const k=pop(t,wordT('s2','video'),.35);ov+=`<g transform="translate(540,760) scale(${k}) rotate(-4)"><rect x="-210" y="-380" width="420" height="760" rx="44" fill="#111" stroke="#333" stroke-width="8"/><rect x="-185" y="-340" width="370" height="680" rx="20" fill="#e9edf2"/><rect x="-170" y="-320" width="260" height="60" rx="18" fill="#cfd6df"/><text x="-155" y="-282" font-size="26" fill="#333">Group chat</text><rect x="-170" y="-230" width="340" height="300" rx="16" fill="#222"/>${[0,1,2].map(i=>`<g transform="translate(${-90+i*80+Math.sin(t*6+i)*8},-60)"><circle cy="-60" r="18" fill="#556"/><rect x="-16" y="-42" width="32" height="70" rx="8" fill="#556"/></g>`).join('')}<path d="M-20,-100 l60,40 l-60,40z" fill="#fff" opacity=".7"/><text x="-160" y="120" font-size="28" fill="#333">wtf is happening outside??</text><text x="-160" y="165" font-size="28" fill="#333">stay inside!!!</text></g>`}
+  } else if(t<s4-0.2){
+    const bangs=[wordT('s3','bang'),wordT('s3','shakes'),wordT('s3','knock')+0.4];let sh=0;bangs.forEach(b=>{if(t>b&&t<b+0.35)sh=1-(t-b)/0.35});
+    bg+=doorClose({t,shake:sh,red:true,fig:A(t,s3+0.3,s3+1.2),hand:t>wordT('s3','someone')?A(t,wordT('s3','someone'),wordT('s3','someone')+.6):0,crack:t>bangs[2]});
+    bg+=`<rect width="1080" height="1920" fill="#c0141b" opacity=".22"/>`;
+    cam.s=1+A(t,s3,s4)*0.1;
+    ov+=tag(540,150,'⚠️ SOMETHING IS IN THE NEXT CAR','#E5383B','#fff',pop(t,s3+0.4),32);
+  } else if(t<s5-0.2){
+    const items=[{a:'Water',b:'1 bottle',t:wordT('s4','water')},{a:'Light',b:'phone 23%',t:wordT('s4','light')},{a:'Door',b:'closed',t:wordT('s4','door')},{a:'Station',b:'400 m',t:wordT('s4','station')}];
+    bg+=notebook({t,items,zoom:1+A(t,s4,s5)*0.05,stamp:pop(t,wordT('s4','paper'),.3)});
+  } else if(t<s6-0.2){
+    const bt=wordT('s5','broken');
+    bg+=doorClose({t,red:true,fig:1,handle:t>wordT('s5','lock')?-A(t,wordT('s5','lock'),bt)*28:0,broken:t>bt,hand:0});
+    bg+=`<rect width="1080" height="1920" fill="#c0141b" opacity=".18"/>`;
+    cam.s=mix(1,2.1,A(t,wordT('s5','lock')-0.3,bt));cam.x=mix(540,720,A(t,wordT('s5','lock')-0.3,bt));cam.y=mix(960,1150,A(t,wordT('s5','lock')-0.3,bt));
+    if(t>s5+0.6&&t<wordT('s5','lock')) ov+=`<rect width="1080" height="1920" fill="#000" opacity="${0.35*Math.sin((t-s5)*2)**2}"/>`;
+    if(t>bt) ov+=tag(540,170,'🔒 LOCK: BROKEN','#E5383B','#fff',pop(t,bt),44);
+  } else if(t<s7-0.2){
+    bg+=tunnel({t,move:1,sign:t>wordT('s6','emergency')-0.3,rail:t>wordT('s6','third')-0.3,torch:0.55});
+    cam.s=1+A(t,s6,s7)*0.08;
+    if(t>wordT('s6','emergency')) ov+=tag(540,150,'🚪 EMERGENCY PASSAGE ≈ EVERY 250 m','#1aa64a','#fff',pop(t,wordT('s6','emergency')),30);
+    if(t>wordT('s6','third')) ov+=tag(540,240,'⚡ THIRD RAIL: CAN BE LIVE','#FFD23F','#111',pop(t,wordT('s6','third')),32);
+    ov+=tag(540,60,'REAL FACT','#ffffff','#111',pop(t,s6+.2),28);
+  } else {
+    const ta=wordT('s7','a:'),tb=wordT('s7','b:');
+    bg+=tunnel({t,move:0.3,sign:true,rail:false,torch:0.7});bg+=`<rect width="1080" height="1920" fill="#000" opacity=".55"/>`;
+    const card=(y,L,txt,col,k,hi)=>k<=0?'':`<g transform="translate(540,${y}) scale(${k*(hi?1+0.04*Math.sin(t*6):1)})"><rect x="-470" y="-120" width="940" height="240" rx="28" fill="#111418" stroke="${col}" stroke-width="8"/><rect x="-470" y="-120" width="200" height="240" rx="28" fill="${col}"/><text x="-370" y="44" text-anchor="middle" font-size="140" font-weight="800" fill="#fff">${L}</text>${txt.map((l,i)=>`<text x="-240" y="${-14+i*58}" font-size="46" font-weight="800" fill="#fff">${l}</text>`).join('')}</g>`;
+    ov+=card(560,'A',['OPEN THE EMERGENCY DOOR','AND RUN INTO THE TUNNEL'],'#E5383B',pop(t,ta,.35),t>wordT('s7','write'));
+    ov+=card(860,'B',['BLOCK THE DOOR','WITH YOUR BAG AND WAIT'],'#2F7BE5',pop(t,tb,.35),t>wordT('s7','write'));
+    if(t>wordT('s7','write')) ov+=tag(540,1720,'💬 COMMENT  A  OR  B','#FFD23F','#111',pop(t,wordT('s7','write')),46);
+    ov+=tag(540,150,'WHAT DO YOU DO?','#ffffff','#111',pop(t,s7+.1),44);
+    if(t>C.s7.start+C.s7.dur) ov+=`<g opacity="${A(t,C.s7.start+C.s7.dur,C.s7.start+C.s7.dur+.4)}"><rect width="1080" height="1920" fill="#000" opacity=".6"/><text x="540" y="1180" text-anchor="middle" font-size="64" font-weight="800" fill="#fff">PART 2 TOMORROW</text><text x="540" y="1250" text-anchor="middle" font-size="40" font-weight="700" fill="#E5463B">You choose. You survive.</text></g>`;
+  }
+  // hook title first seconds
+  if(t<4.2) ov+=`<g opacity="${1-A(t,3.6,4.2)}"><rect x="60" y="230" width="960" height="190" rx="18" fill="#E5383B"/><text x="540" y="310" text-anchor="middle" font-size="54" font-weight="800" fill="#fff">ZOMBIE OUTBREAK STARTS</text><text x="540" y="380" text-anchor="middle" font-size="54" font-weight="800" fill="#fff">WHILE YOU'RE IN THE SUBWAY</text></g>`+tag(540,470,'PART 1','#111','#fff',pop(t,.3),34);
+  return {bg,ov,cam};}
+function render(t){const sc=scene(t),c=sc.cam;
+  const tr=`translate(540,960) scale(${c.s}) rotate(${c.r||0}) translate(${-c.x},${-c.y})`;
+  const grain=`<rect width="1080" height="1920" fill="url(#vig)"/>`;
+  document.getElementById('v').innerHTML=DEFS+`<g transform="${tr}">${sc.bg}</g>`+grain+sc.ov+captions(t);}
+window.render=render;
+</script></body></html>
