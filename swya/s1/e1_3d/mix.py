@@ -40,8 +40,8 @@ def door_hit(tt0,g=1):
     n=int(.6*sr);tt=np.arange(n)/sr
     thud=(np.sin(2*np.pi*58*tt)*1.4+lp(rng.standard_normal(n),20)*4)*env(n,.001,.12)
     metal=sum(np.sin(2*np.pi*f*tt)*a for f,a in ((431,1),(1187,.6),(2273,.4),(3519,.25)))*env(n,.001,.35)*.5
-    add(fx,tt0-.02,verb(thud+metal,1.0),0.9*g)
-    n2=int(.8*sr);tt2=np.arange(n2)/sr;add(fx,tt0,sum(np.sin(2*np.pi*f*(1+.01*np.sin(2*np.pi*6*tt2))*tt2) for f in (1661,1760,1864))*env(n2,.005,.3)*.07*g)
+    add(fx,tt0-.02,verb(thud*0.5+metal*0.6,0.8),0.28*g)
+    n2=int(.8*sr);tt2=np.arange(n2)/sr;add(fx,tt0,sum(np.sin(2*np.pi*f*(1+.01*np.sin(2*np.pi*6*tt2))*tt2) for f in (1661,1760,1864))*env(n2,.005,.3)*.025*g)
 for b in [wT('a1','hitting'),wT('a1','minutes')+0.1,wT('a1','broken'),tHit3,tHit3+0.9,tHit3+1.7]: door_hit(b)
 # heartbeat cold open + twist
 for a,b in ((0.3,a2),(a6,a7)):
@@ -50,7 +50,7 @@ for a,b in ((0.3,a2),(a6,a7)):
             n=int(.16*sr);add(fx,k+d,np.sin(2*np.pi*48*np.arange(n)/sr)*env(n,.003,.05)*g*0.8)
 # riser + braam into "3 minutes earlier"
 n=int(1.0*sr);tt=np.arange(n)/sr;f=np.linspace(200,1800,n);add(fx,a2-1.0,(np.sin(2*np.pi*np.cumsum(f)/sr)*.12+lp(rng.standard_normal(n),3)*.2)*(tt/1)**2)
-n=int(2.5*sr);tt=np.arange(n)/sr;add(fx,a2+0.02,lp(sum(np.sign(np.sin(2*np.pi*f*tt))*a for f,a in ((36.7,1),(55,.8),(73.4,.5)))*env(n,.01,.8)*.3,8))
+n=int(2.5*sr);tt=np.arange(n)/sr;add(fx,a2+0.02,lp(sum(np.sign(np.sin(2*np.pi*f*tt))*a for f,a in ((36.7,1),(55,.8),(73.4,.5)))*env(n,.01,.8)*.18,8))
 for k in np.arange(a2+0.6,tEar+0.4,0.5):
     n=int(.05*sr);add(fx,k,np.sin(2*np.pi*2400*np.arange(n)/sr)*env(n,.001,.01)*.12)
 # train rumble + clacks while moving, brakes at stop
@@ -59,7 +59,7 @@ fx+=rum*0.12
 for k in np.arange(tEar+0.5,tStop,0.62):
     for d in (0,.09):n=int(.06*sr);add(fx,k+d,lp(rng.standard_normal(n),6)*env(n,.001,.02)*.4)
 n=int(1.4*sr);tt=np.arange(n)/sr;add(fx,tStop-0.3,np.sin(2*np.pi*(2300+250*np.sin(tt*28))*tt)*env(n,.05,.5)*.12)
-n=int(.7*sr);tt=np.arange(n)/sr;add(fx,tStop,(np.sin(2*np.pi*45*tt)*1.5+lp(rng.standard_normal(n),40)*5)*env(n,.002,.25)*.8)
+n=int(.7*sr);tt=np.arange(n)/sr;add(fx,tStop,(np.sin(2*np.pi*45*tt)*1.5+lp(rng.standard_normal(n),40)*5)*env(n,.002,.25)*.4)
 # lights out clunk + alarm hum
 n=int(.35*sr);add(fx,tLights,np.sin(2*np.pi*70*np.arange(n)/sr)*env(n,.002,.1)*.9)
 alarmz=(t>tLights)&(t<a7);fx+=np.sign(np.sin(2*np.pi*120*t))*0.012*alarmz
@@ -72,7 +72,7 @@ n=int(.5*sr);add(fx,a5,lp(rng.standard_normal(n),3)*env(n,.02,.15)*.3)
 for w in ['water','light','next','the']:
     n=int(.12*sr);add(fx,wT('a5',w)+.1,lp(rng.standard_normal(n),3)*env(n,.002,.03)*.3)
 # "only one problem" hit
-tp=wT('a5','one');n=int(2.0*sr);tt=np.arange(n)/sr;add(fx,tp,lp(sum(np.sign(np.sin(2*np.pi*f*tt))*a for f,a in ((32.7,1),(49,.7)))*env(n,.01,.7)*.3,8))
+tp=wT('a5','one');n=int(2.0*sr);tt=np.arange(n)/sr;add(fx,tp,lp(sum(np.sign(np.sin(2*np.pi*f*tt))*a for f,a in ((32.7,1),(49,.7)))*env(n,.01,.7)*.18,8))
 # handle creak
 tsl=wT('a6','slowly');n=int(2.2*sr);tt=np.arange(n)/sr;add(fx,tsl,np.sin(2*np.pi*(180+60*tt)*tt+3*np.sin(2*np.pi*23*tt))*np.sin(np.pi*tt/2.2)*.1)
 tb=wT('a6','broken');door_hit(tb,0.6)
@@ -84,11 +84,11 @@ th=wT('a7','third');n=int(4*sr);tt=np.arange(n)/sr;add(fx,th-0.2,np.sign(np.sin(
 # choices whoosh + end hit
 for w in ['a:','b:']:
     n=int(.5*sr);add(fx,wT('a8',w)-0.2,lp(rng.standard_normal(n),40)*np.sin(np.pi*np.arange(n)/n)**2*3)
-n=int(3*sr);tt=np.arange(n)/sr;add(fx,END('a8')+0.05,lp(sum(np.sign(np.sin(2*np.pi*f*tt))*a for f,a in ((36.7,1),(55,.8)))*env(n,.01,1.0)*.3,8))
+n=int(3*sr);tt=np.arange(n)/sr;add(fx,END('a8')+0.05,lp(sum(np.sign(np.sin(2*np.pi*f*tt))*a for f,a in ((36.7,1),(55,.8)))*env(n,.01,1.0)*.18,8))
 # voice
 w=wave.open('voice.wav');v=np.frombuffer(w.readframes(w.getnframes()),np.int16).astype(float)/32768;v=np.pad(v,(0,max(0,N-len(v))))[:N]
 e=np.convolve(np.abs(v),np.ones(int(.2*sr))/(.2*sr),'same');duck=1-0.5*np.clip(e/0.04,0,1)
 out=v*1.0+mus*0.16*duck+fx*0.75
-out=np.tanh(out*1.1)/np.tanh(1.1)
+
 out/=max(1,np.abs(out).max()/0.97)
 wo=wave.open('mix.wav','wb');wo.setnchannels(1);wo.setsampwidth(2);wo.setframerate(sr);wo.writeframes((out*32767).astype(np.int16).tobytes());wo.close();print('ok')
