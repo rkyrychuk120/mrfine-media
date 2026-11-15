@@ -48,7 +48,7 @@ function walker(o){const g=new THREE.Group();const skin=M(o.skin||0xc99d7c),pant
  const legs=[-.11,.11].map(x=>{const p=new THREE.Group();p.position.set(x,.9,0);g.add(p);box(.16,.86,.16,pants,0,-.43,0,true,p);box(.17,.08,.24,M(0x15161a),0,-.86,.04,true,p);return p});
  const arms=[-.29,.29].map(x=>{const p=new THREE.Group();p.position.set(x,1.5,0);g.add(p);box(.13,.56,.13,sh,0,-.27,0,true,p);box(.12,.12,.12,skin,0,-.58,0,true,p);return p});
  const hy=1.75;const h=new THREE.Mesh(new THREE.IcosahedronGeometry(.17,0),skin);h.position.y=hy;h.castShadow=true;g.add(h);
- const hair=new THREE.Mesh(new THREE.IcosahedronGeometry(.18,0),M(o.hair||0x2b221d));hair.position.set(0,.06,-.03);hair.scale.set(1,.6,1);h.add(hair);
+ const hair=new THREE.Mesh(new THREE.IcosahedronGeometry(.18,0),M(o.hair||0x2b221d));hair.position.set(0,.07,-.045);hair.scale.set(1.08,.7,1.08);h.add(hair);if(o.long)box(.36,.42,.12,M(o.hair),0,-.16,-.15,true,h);
  [-.06,.06].forEach(x=>box(.05,.065,.02,new THREE.MeshBasicMaterial({color:0x0a0a0a}),x,.015,.158,false,h));
  let phone=null,flame=null;
  if(o.phone){phone=new THREE.Mesh(new THREE.BoxGeometry(.08,.02,.15),new THREE.MeshStandardMaterial({color:0x1a1d22,emissive:0x6fa8ff,emissiveIntensity:1.2}));phone.position.set(0,-.66,.03);arms[1].add(phone)}
@@ -223,7 +223,7 @@ const vkeys=box(0.12,0.03,0.08,M(0xd4af37,{metalness:.9,roughness:.3,emissive:0x
 const brLamp=box(0.3,0.06,0.3,new THREE.MeshStandardMaterial({color:0xfff0c8,emissive:0xfff0c8,emissiveIntensity:1.2}),19,3.12,-12.4,false,BR);
 const brL=new THREE.PointLight(0xffe2b0,0,9,1.5);brL.position.set(SX+19,2.8,-12.2);S.add(brL);
 // Ana
-const ANA=walker({shirt:0xf4f4f0,pants:0x3a4458,hair:0x8a5a2a,skin:0xd8b090});
+const ANA=walker({shirt:0xf4f4f0,pants:0x3a4458,hair:0x8a5a2a,skin:0xd8b090,long:true});
 const bar=box(0.05,0.85,0.05,M(0x8a8f96,{metalness:.8,roughness:.3}),0,-0.6,0.12,true,ANA.arms[1]);bar.rotation.x=1.2;
 // brother lying under a blanket
 const BRO=walker({shirt:0x6a5040,pants:0x2a2d33,hair:0x3a2a1a,skin:0xb89a80});const BH=new THREE.Group();BH.position.set(19.2,0,-13.45);BH.rotation.y=-Math.PI/2;st.add(BH);
@@ -260,7 +260,7 @@ function render(t){
  const tk=[wT('a1','knock',0),wT('a1','knock',1),wT('a1','knock',2)],tTurn=wT('a1','turns'),tGet=wT('a5','get'),tOpen=wT('a8','opened'),tMan=wT('a6','man'),tLooksMe=wT('a7','then');
  const street=t>=a2&&t<wT('a2','so');
  // ---- door
- let dOpen=0;if(t>=a3)dOpen=mix(0,0.75,A(t,a3,a3+1.0));if(t>=tGet)dOpen=mix(0.75,1.7,A(t,tGet,tGet+0.6));if(t>=a6+3)dOpen=mix(1.7,0.2,A(t,a6+3,a6+4));
+ let dOpen=0;if(t>=a3)dOpen=mix(0,1.5,A(t,a3,a3+1.0));if(t>=tGet)dOpen=mix(1.5,1.7,A(t,tGet,tGet+0.6));if(t>=a6+3)dOpen=mix(1.7,0.2,A(t,a6+3,a6+4));
  dpv.rotation.y=dOpen;dhandle.rotation.x=t>tTurn-0.1&&t<a3+0.5?0.6:0;
  // ---- group
  const S0={YOU:[16.35,-11.95,2.3],KID:[16.0,-11.25,2.0],NURSE:[16.45,-10.65,2.6],SUIT:[15.9,-10.05,2.3]};
@@ -283,8 +283,8 @@ function render(t){
  ANA.g.visible=t>=a3;ANA.g.rotation.set(0,0,0);ANA.h.rotation.set(0,0,0);
  if(t<tGet+0.3){pose(ANA,SX+17.5,-12.45,0,0,-Math.PI/2);ANA.arms[1].rotation.x=-0.9;ANA.arms[0].rotation.x=-0.3;
    if(t>a5&&t<tGet){ANA.arms[1].rotation.x=-0.9+0.05*Math.sin(t*38);ANA.arms[0].rotation.x=-0.9+0.05*Math.sin(t*41)}}
- else{const k=A(t,tGet+0.3,tGet+2.5);pose(ANA,SX+mix(17.5,19.55,k),mix(-12.45,-13.95,k),t*4,k<1?0.4:0,k<1?2.4:0);ANA.arms[1].rotation.x=-0.3;bar.visible=k<0.6;
-   if(t>=a6+2){pose(ANA,SX+19.55,-13.95,0,0,0.15);ANA.g.position.y=-0.35;ANA.legs.forEach(l=>l.rotation.x=-1.2);ANA.arms[0].rotation.x=-0.8;ANA.arms[1].rotation.x=-0.8;ANA.h.rotation.x=0.4}
+ else{const k=A(t,tGet+0.3,tGet+2.5);pose(ANA,SX+mix(17.5,19.75,k),mix(-12.45,-13.97,k),t*4,k<1?0.4:0,k<1?2.4:0);ANA.arms[1].rotation.x=-0.3;bar.visible=k<0.6;
+   if(t>=a6+2){pose(ANA,SX+19.75,-13.97,0,0,0.1);ANA.arms[0].rotation.x=-0.35;ANA.arms[1].rotation.x=-0.25;ANA.h.rotation.x=0.45}
    if(t>=a9){ANA.h.rotation.y=0.5}}
  if(t<tGet+0.3)bar.visible=true;
  // ---- brother
