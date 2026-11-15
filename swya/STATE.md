@@ -18,7 +18,7 @@ Before starting, check `swya/s1/eN/` for the next episode number N — if that f
 - Structure: cold open → recap with yellow/red tags → numbered rule (paperTag) → events with tags → "On paper… One problem…" (3–4 s, no long lists) → Real fact → choice.
 - Choice format 3: "So, what would you do? A… or B? Tell me in the comments. Part N+1 tomorrow." Both options must be risky; show the risk line on each card.
 - People: blocky walkers WITH arms and dot eyes; group = NURSE, SUIT, KID, YOU (4 people). **No headphones / nothing on ears.** Phone screens must say who is writing (e.g. "Mom ❤️") and why there is signal.
-- Ambient sound always (no silent scenes); music low; whispers in tense parts. Captions white with yellow/red highlights.
+- Ambient sound always (no silent scenes); music low; **NO continuous synthetic tones under the whole video (owner hated the looping car-alarm 'vuvuvu' in E6) — alarms/hums only as short distant moments (≤3 s), never a constant bed**; whispers in tense parts. Captions white with yellow/red highlights.
 - Cover: `cover.py ep.html <t> "PART N" "LINE1" "LINE2" out.png` (series name + yellow PART pill + 2-line title).
 - Export: 1440x2560 H.264 BT.709, AAC 256k, loudnorm −14 LUFS (mix.py does it).
 

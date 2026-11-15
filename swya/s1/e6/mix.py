@@ -54,7 +54,7 @@ for buf,seed in ((fxL,3),(fxR,4)):
     r=np.random.default_rng(seed);buf+=lp(r.standard_normal(N),120)*4*0.06*np.where(t<a3,1,0.35)
 # alarm until stop
 f=np.where((t%4)<2,700+500*((t*6)%1>0.5),900+400*np.sin(2*np.pi*3*t));al=np.sign(np.sin(np.cumsum(2*np.pi*f/sr)))*(t<tStop)
-al=lp(al,6)*np.where(t<a3,0.026,0.012);fxL+=al*0.8;fxR+=al*1.2
+al=lp(al,6)*0.02*np.clip((3.0-t)/1.5,0,1);fxL+=al*0.8;fxR+=al*1.2
 # footsteps on street + inside
 def step(tk,g):n=int(.08*sr);addS(tk,lp(rng.standard_normal(n),4)*env(n,.002,.02),g*0.18,rng.uniform(-.3,.3))
 for tk in np.arange(0.3,a3,0.42): step(tk,1)
