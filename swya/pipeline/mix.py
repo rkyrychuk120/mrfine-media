@@ -35,7 +35,7 @@ mus+=pad
 
 lvl=np.full(N,0.5)
 def seg(a,b,v):lvl[int(a*sr):int(b*sr)]=v
-seg(0,a3,0.5);seg(a3,a6,0.4);seg(a6,a8,0.1);seg(a8,a10,0.45);seg(a10,D,0.6)
+seg(0,a2,0.15);seg(a2,a4,0.35);seg(a4,a6,0.3);seg(a6,a8,0.65);seg(a8,a9,0.45);seg(a9,D,0.6)
 lvl=np.convolve(lvl,np.ones(int(.25*sr))/(.25*sr),'same');mus*=lvl
 def door_hit(tt0,g=1):
     n=int(.6*sr);tt=np.arange(n)/sr
@@ -48,38 +48,39 @@ def door_hit(tt0,g=1):
 
 
 
-tStop=wT('a8','stopped')
-# outdoor ambience (less inside)
+
+outside=t>=a6+0.6
 for buf,seed in ((fxL,3),(fxR,4)):
-    r=np.random.default_rng(seed);buf+=lp(r.standard_normal(N),120)*4*0.06*np.where(t<a3,1,0.35)
-# alarm until stop
-f=np.where((t%4)<2,700+500*((t*6)%1>0.5),900+400*np.sin(2*np.pi*3*t));al=np.sign(np.sin(np.cumsum(2*np.pi*f/sr)))*(t<tStop)
-al=lp(al,6)*np.where(t<a3,0.026,0.012);fxL+=al*0.8;fxR+=al*1.2
-# footsteps on street + inside
-def step(tk,g):n=int(.08*sr);addS(tk,lp(rng.standard_normal(n),4)*env(n,.002,.02),g*0.18,rng.uniform(-.3,.3))
-for tk in np.arange(0.3,a3,0.42): step(tk,1)
-for tk in np.arange(a3,a5,0.55): step(tk,0.7)
-# 10s ticks a1
-for k in range(10):
-    n=int(.06*sr);add(fx,0.5+k*0.6,np.sin(2*np.pi*1800*np.arange(n)/sr)*env(n,.001,.02)*.12)
-# glass door creak + bell
-n=int(.6*sr);tt=np.arange(n)/sr;add(fx,a3-0.2,sum(np.sin(2*np.pi*f*tt)*a for f,a in ((1568,1),(2093,.6)))*env(n,.005,.25)*.12)
-# item rustle picks
-for w in ('bandages','painkillers','antiseptic','inhaler'):
-    n=int(.25*sr);add(fx,wT('a5',w),lp(rng.standard_normal(n),3)*env(n,.005,.06)*.3)
-# heartbeat a6-a8
-for k in np.arange(a6,a8,0.78):
-    for d,g in ((0,1),(.17,.7)):n=int(.16*sr);add(fx,k+d,np.sin(2*np.pi*48*np.arange(n)/sr)*env(n,.003,.05)*g*0.9)
-tly=wT('a7','they');n=int(2.0*sr);tt=np.arange(n)/sr;add(fx,tly,lp(sum(np.sign(np.sin(2*np.pi*f*tt))*a for f,a in ((32.7,1),(49,.7)))*env(n,.01,.7)*.2,8))
-# faint knock from behind back door in a7
-for k in (a7+2.0,a7+2.4):
-    n=int(.2*sr);add(fx,k,verb((np.sin(2*np.pi*90*np.arange(n)/sr)+lp(rng.standard_normal(n),20)*2)*env(n,.002,.05),0.8),0.25)
-# silence after alarm stops + groans approaching
-n=int(1.5*sr);tt=np.arange(n)/sr;add(fx,tStop,lp(sum(np.sign(np.sin(2*np.pi*f*tt))*a for f,a in ((36.7,1),(55,.7)))*env(n,.01,.6)*.16,8))
+    r=np.random.default_rng(seed);buf+=lp(r.standard_normal(N),120)*4*0.05*np.where(outside,1,0.3)
+# heartbeat a1 and a3
+for a_,b_ in ((0.2,a2),(a3,a4)):
+    for k in np.arange(a_,b_,0.78):
+        for d,g in ((0,1),(.17,.7)):n=int(.16*sr);add(fx,k+d,np.sin(2*np.pi*48*np.arange(n)/sr)*env(n,.003,.05)*g*0.9)
+# brother raspy breath a1-a3
+for q in np.arange(0.3,wT('a3','closes'),2.4):
+    n=int(1.1*sr);addS(q,lp(rng.standard_normal(n),5)*np.sin(np.pi*np.arange(n)/n)**2*(0.6+0.4*np.sin(2*np.pi*13*np.arange(n)/sr))*.07,1,0.3)
+# keys jingle
+tkk=wT('a4','keys');n=int(.6*sr);tt=np.arange(n)/sr
+add(fx,tkk,sum(np.sin(2*np.pi*f*tt)*(np.sin(2*np.pi*11*tt+i)>0.4) for i,f in enumerate((3100,4200,5300)))*env(n,.005,.2)*.05)
+# alley door + glass crack + running steps
+td=a6+0.5;n=int(.6*sr);tt=np.arange(n)/sr;add(fx,td,np.sin(2*np.pi*(240+60*tt)*tt+3*np.sin(2*np.pi*17*tt))*np.sin(np.pi*tt/0.6)*.07)
+tcr=wT('a6','cracks');n=int(.8*sr);tt=np.arange(n)/sr;add(fx,tcr,verb(lp(rng.standard_normal(n),2)*env(n,.001,.12)*0.6+sum(np.sin(2*np.pi*f*tt) for f in (2800,4100))*env(n,.001,.08)*.2,1.0),0.35)
+for tk in np.arange(a6+0.6,a7+0.3,0.3):
+    n=int(.08*sr);addS(tk,lp(rng.standard_normal(n),4)*env(n,.002,.02),0.2,rng.uniform(-.3,.3))
+# van doors + engine start + engine run
+for tk in (a7+0.2,a7+0.9,a7+1.4):
+    n=int(.3*sr);add(fx,tk,(np.sin(2*np.pi*70*np.arange(n)/sr)+lp(rng.standard_normal(n),15)*2)*env(n,.002,.08)*.35)
+ts=wT('a7','i');n=int(1.4*sr);tt=np.arange(n)/sr;add(fx,ts,(np.sign(np.sin(2*np.pi*(18+10*tt)*tt))*0.4+lp(rng.standard_normal(n),20)*2)*np.minimum(1,tt*3)*.12)
+eng=(t>=ts+1.2)&(t<a9)
+fx+=lp(np.sign(np.sin(2*np.pi*np.where((t>a8)&(t<a8+6),38,28)*t))*0.5+lp(rng.standard_normal(N),30)*2,8)*0.05*eng
+# brake squeal near gate
+tb=a8+5.6;n=int(1.0*sr);tt=np.arange(n)/sr;add(fx,tb,np.sin(2*np.pi*(2400+200*np.sin(tt*30))*tt)*env(n,.02,.3)*.05)
+tl0=wT('a8','locked');n=int(2.0*sr);tt=np.arange(n)/sr;add(fx,tl0,lp(sum(np.sign(np.sin(2*np.pi*f*tt))*a for f,a in ((32.7,1),(49,.7)))*env(n,.01,.7)*.18,8))
+# zombies entering alley
 for k in range(18):
-    tk=tStop+0.8+rng.random()*(D-tStop-2);n=int(1.3*sr);tt=np.arange(n)/sr;fq=rng.uniform(90,170)
-    addS(tk,verb(np.sin(2*np.pi*(fq-20*tt)*tt+3*np.sin(2*np.pi*rng.uniform(15,30)*tt))*np.sin(np.pi*tt/1.3)**2*.045,1.2),1,rng.uniform(-.8,.8))
-for w in ('knock','or'):
+    tk=a8+1+rng.random()*(D-a8-2);n=int(1.3*sr);tt=np.arange(n)/sr;fq=rng.uniform(90,170)
+    addS(tk,verb(np.sin(2*np.pi*(fq-20*tt)*tt+3*np.sin(2*np.pi*rng.uniform(15,30)*tt))*np.sin(np.pi*tt/1.3)**2*.05,1.2),1,rng.uniform(-.8,.8))
+for w in ('ram','or'):
     n=int(.5*sr);add(fx,wT('a10',w)-0.2,lp(rng.standard_normal(n),40)*np.sin(np.pi*np.arange(n)/n)**2*3)
 n=int(3*sr);tt=np.arange(n)/sr;add(fx,END('a10')+0.05,lp(sum(np.sign(np.sin(2*np.pi*f*tt))*a for f,a in ((36.7,1),(55,.8)))*env(n,.01,1.0)*.18,8))
 # --- voice + mix

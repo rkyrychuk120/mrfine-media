@@ -1,20 +1,19 @@
 import json,subprocess,wave,numpy as np
 from segs import segs
 T={
-"a1": "*Go!* *Go!* *Go!* Ana hits the gas... and the van *crashes* through the alley gate.",
-"a2": "Part seven: a pharmacist named *Ana* let us in. Her brother had a *bite,* and a *fever.* We took him *with* *us.*",
-"a3": "Before we left, the nurse *tied* *his* *hands* with tape. Ana *cried...* but she let her.",
-"a4": "*Rule* *number* *eight:* if someone in your group might turn... *never* *sit* *with* *your* *back* *to* *them.*",
-"a5": "The streets are *full.* Ana drives on the *sidewalk.* Hands *hit* *the* *windows.* The kid holds his *inhaler* and closes his eyes.",
-"a6": "Then, behind me... *breathing.* Heavy, *wet* *breathing.* Her brother is *pulling* *at* *the* *tape.*",
-"a7": "Ana sees the *bridge.* On the other side: *lights,* *soldiers,* and a big sign. *Safe* *zone.*",
-"a8": "On paper, we *made* *it.* *One* *problem...* the soldiers check *everyone* for bites. And the tape just *broke.*",
-"a9": "*Real* *fact:* a *fever* means your body temperature is over *thirty-eight* *degrees.* It's your body *fighting* an *infection.*",
-"a10": "So, *what* *would* *you* *do?* Stop the van and *fight* *him* before the bridge... or drive to the soldiers and *tell* *the* *truth?* *Tell* *me* in the comments. Part nine tomorrow."
-}
-SR=24000;GAP_MAX=0.42
+'a1':"*His* *eyes* *are* *open.* *Nobody* *moves.*",
+'a2':"Part seven: we *knocked,* even though most of you said *barricade.* One of you *called* *us* *out.* *Fair.* This time, we *listen.* The *comments* said: *leave* *him.*",
+'a3':"But first, like one of you said, we *ask* *him.* What *bit* *you?* He whispers: *a* *kid.* *At* *the* *station.* Then he closes his eyes.",
+'a4':"*Ana* doesn't cry. She just touches his forehead... and puts the *keys* in my hand.",
+'a5':"*Rule* *number* *eight:* whoever holds the *keys* decides who comes with you.",
+'a6':"The *alley* *door.* *Ten* *steps* to the van. Behind us, the front glass *cracks.*",
+'a7':"*Everyone* *in.* Ana's hands are *shaking* too much to drive. So *I* *drive.*",
+'a8':"On paper, we're *out:* a *full* *tank,* and the alley is *clear.* *One* *problem...* the alley ends at a *gate.* And the gate is *locked.*",
+'a9':"*Real* *fact:* ramming something at speed can set off the *airbags,* and they can *stop* *a* *car* right where it hits.",
+'a10':"So, *what* *would* *you* *do?* Ram the gate, and hope the van keeps going... or get out and open it by hand, with them right behind us? *Tell* *me* in the comments. Part nine tomorrow."}
+SR=24000;GAP_MAX=0.32
 def load(n):
-    w=wave.open(f'audio/{n}.wav');sr=w.getframerate();x=np.frombuffer(w.readframes(w.getnframes()),np.int16).astype(float)/32768;r=np.sqrt((x[np.abs(x)>0.01]**2).mean());x=x/r*(0.085 if n in('a6',) else 0.1);return x,sr
+    w=wave.open(f'audio/{n}.wav');sr=w.getframerate();x=np.frombuffer(w.readframes(w.getnframes()),np.int16).astype(float)/32768;r=np.sqrt((x[np.abs(x)>0.01]**2).mean());x=x/r*(0.085 if n in('a1','a7') else 0.1);return x,sr
 t=0;clips=[];chunks=[];full=[]
 for n in ['a%d'%i for i in range(1,11)]:
     sg,d=segs(n);x,sr=load(n)
@@ -26,7 +25,7 @@ for n in ['a%d'%i for i in range(1,11)]:
             gap=min(GAP_MAX,max(0.12,a-sg[i-1][1]));pieces.append(np.zeros(int(gap*sr)));cur+=gap
         seg=x[int(a2*sr):int(b2*sr)];newseg.append((cur+(a-a2),cur+(a-a2)+(b-a)));pieces.append(seg);cur+=len(seg)/sr
     y=np.concatenate(pieces);dur=len(y)/sr
-    gap_before={'a2':0.55,'a3':0.6,'a4':0.65,'a5':0.6,'a6':0.75,'a7':0.7,'a8':0.8,'a9':0.75,'a10':0.6}.get(n,0.18)
+    gap_before={'a2':0.6,'a3':0.4,'a4':0.6,'a5':0.5,'a6':0.4,'a7':0.4,'a8':0.6,'a9':0.5,'a10':0.4}.get(n,0.18)
     t+=gap_before if n!='a1' else 0.25
     words=T[n].split();tot_sp=sum(b-a for a,b in newseg);tot_c=sum(len(w.strip('*'))+1 for w in words)
     def at(f):
@@ -45,7 +44,7 @@ for n in ['a%d'%i for i in range(1,11)]:
             chunks.append({'s':cur[0][1],'e':cur[-1][2],'w':[[q[0].strip('*'),q[0].startswith('*'),q[1]] for q in cur]});cur=[]
     if cur:chunks.append({'s':cur[0][1],'e':cur[-1][2],'w':[[q[0].strip('*'),q[0].startswith('*'),q[1]] for q in cur]})
     clips.append({'n':n,'start':round(t,3),'dur':round(dur,3)});full.append((t,y));t+=dur
-total=t+3.5
+total=t+3.0
 N=int(total*SR);v=np.zeros(N)
 for st,y in full:i=int(st*SR);v[i:i+len(y)]+=y[:N-i]
 wo=wave.open('voice_raw.wav','wb');wo.setnchannels(1);wo.setsampwidth(2);wo.setframerate(SR);wo.writeframes((np.clip(v,-1,1)*32767).astype(np.int16).tobytes());wo.close()
