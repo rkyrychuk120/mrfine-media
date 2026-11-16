@@ -253,6 +253,21 @@ box(2.0,1.9,4.6,vanM,0,1.35,0,true,VAN);box(1.96,0.7,0.04,new THREE.MeshStandard
 const hl=[-0.65,0.65].map(x=>box(0.3,0.15,0.04,new THREE.MeshStandardMaterial({color:0xfff6d0,emissive:0xfff6d0,emissiveIntensity:0}),x,0.85,-2.31,false,VAN));
 const vanL=new THREE.SpotLight(0xfff2d0,0,30,0.5,0.5,1.2);S.add(vanL);S.add(vanL.target);
 const alAmb=new THREE.PointLight(0xcfd8e8,0,18,1.2);S.add(alAmb);
+
+// ---------- beyond the gate: cross street ----------
+const BY=new THREE.Group();st.add(BY);
+box(60,0.06,14,M(0x3d4045),24,0.02,-37,false,BY);box(60,0.2,3,M(0x8d8a84),24,0.1,-29.8,false,BY);box(60,0.2,3,M(0x8d8a84),24,0.1,-44.5,false,BY);
+for(let x=-4;x<54;x+=5)box(2.4,0.02,0.22,M(0xe8e2c0),x,0.06,-37,false,BY);
+const bc2=[0x6b5a4a,0x5a6070,0x7a6a5a,0x4a5560,0x6a4a4a,0x55606a];
+for(let i=0;i<8;i++){const h=12+((i*5)%4)*4,x=-4+i*8;box(7.4,h,8,M(bc2[i%6]),x,h/2,-50,false,BY);
+ for(let fy=2;fy<h-1;fy+=2.4)for(let fx=-2.8;fx<=2.8;fx+=1.6)box(1.0,1.2,0.05,new THREE.MeshStandardMaterial({color:0x1d232b,emissive:((i+fy+fx)%5<1)?0x2a2418:0}),x+fx,fy,-45.97,false,BY)}
+[[14,-33,0.1,0x8a2a2a],[30,-41,-0.2,0x2a4a8a],[36,-34,1.5,0xbcbcbc],[8,-41,0.05,0x2a2a2a]].forEach(([x,z,r,c])=>{const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=r+Math.PI/2;BY.add(g);
+ box(1.8,0.7,4.2,M(c),0,0.55,0,true,g);box(1.6,0.6,2.2,M(0x1d232b),0,1.15,-0.2,true,g);[[-.8,1.3],[.8,1.3],[-.8,-1.3],[.8,-1.3]].forEach(([wx,wz])=>box(0.25,0.55,0.55,M(0x111111),wx,0.28,wz,false,g))});
+const pol=new THREE.Group();pol.position.set(22,0,-38.5);pol.rotation.y=0.4;BY.add(pol);box(1.9,0.75,4.4,M(0xf2f2f2),0,0.55,0,true,pol);box(1.95,0.25,1.6,M(0x1a3a8a),0,0.6,0.4,false,pol);box(1.7,0.6,2.2,M(0x1d232b),0,1.18,-0.2,true,pol);
+const pR=box(0.4,0.12,0.2,new THREE.MeshStandardMaterial({color:0xff2020,emissive:0xff2020,emissiveIntensity:0}),-0.3,1.55,-0.2,false,pol);const pB=box(0.4,0.12,0.2,new THREE.MeshStandardMaterial({color:0x2050ff,emissive:0x2050ff,emissiveIntensity:0}),0.3,1.55,-0.2,false,pol);
+const polL=new THREE.PointLight(0xff3030,0,10,1.4);S.add(polL);
+const BZ=[];for(let i=0;i<5;i++){const z=walker({shirt:[0x4a3b3b,0x3b4a3b,0x555555,0x2b2f36,0x6a5a3a][i],pants:0x24262b,skin:0x6d7a5f,hair:0x1a1a1a});z.g.traverse(m=>{m.castShadow=false});
+ [-.06,.06].forEach(x=>{const e=new THREE.Mesh(new THREE.SphereGeometry(.03,6,6),new THREE.MeshBasicMaterial({color:0xfff2c0}));e.position.set(x,.02,.16);z.h.add(e)});BZ.push({p:z,x:SX+10+i*7,z:-36+((i*3)%5)-2,ph:i*1.3})}
 // ---------- overlay helpers ----------
 function tag(x,y,txt,bg,fg,sc,fs=34){if(sc<=0.01)return '';const w=txt.length*fs*.62+50,h=fs+30;return `<g transform="translate(${x},${y}) scale(${sc})"><rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx="${h/2}" fill="${bg}"/><text x="0" y="${fs*.36}" text-anchor="middle" font-size="${fs}" font-weight="800" fill="${fg}">${txt}</text></g>`}
 function paperTag(x,y,num,txt,sc){if(sc<=0.01)return '';const w=txt.length*30+150;return `<g transform="translate(${x},${y}) scale(${sc}) rotate(-3)"><rect x="${-w/2}" y="-46" width="${w}" height="92" fill="#f1ead8" stroke="#2a2418" stroke-width="3"/><text x="${-w/2+30}" y="18" font-family="DejaVu Serif" font-style="italic" font-size="44" fill="#c62828">${num}.</text><text x="${-w/2+90}" y="16" font-size="46" font-weight="800" fill="#1d1a14">${txt}</text></g>`}
@@ -291,7 +306,7 @@ function render(t){
    let [x,z,r]=P0[n];let walk=0;
    if(kOut>0){const q=cl(kOut*1.3-i*0.1);const d=[21.3,-13.3],v=[22.5,-12.0+(i-1.5)*0.3];walk=q>0&&q<1?1:0;
      if(q<0.5){x=mix(P0[n][0],d[0],q*2);z=mix(P0[n][1],d[1],q*2);r=Math.PI/2}else{x=mix(d[0],v[0],(q-0.5)*2);z=mix(d[1],v[1],(q-0.5)*2);r=Math.PI/2}
-     p.g.visible=q<1}else p.g.visible=true;
+     p.g.visible=q<0.99&&t<a7}else p.g.visible=true;
    pose(p,SX+x,z,t*6+i,walk*0.7,r)});
  YOU.arms[1].rotation.x=t>=tKeys&&t<a7?-1.2:YOU.arms[1].rotation.x;
  const ykeys=YOU.arms[1];
@@ -299,14 +314,17 @@ function render(t){
  ANA.g.visible=true;ANA.g.rotation.set(0,0,0);ANA.h.rotation.set(0,0,0);bar.visible=false;
  if(t<a6+0.4){const kk=A(t,a4,a4+1.2);pose(ANA,SX+mix(19.75,19.65,kk),mix(-13.97,-12.75,kk),0,0,mix(0.1,2.3,kk));
    if(t>=a4){ANA.arms[1].rotation.x=t<tKeys?-1.4:-1.0;ANA.h.rotation.x=0.4}}
- else{const q=cl(kOut*1.3-0.45);ANA.g.visible=q<1;pose(ANA,SX+mix(19.65,22.5,q),mix(-12.75,-12.9,q),t*6,q>0&&q<1?0.7:0,Math.PI/2)}
+ else{const q=cl(kOut*1.3-0.45);ANA.g.visible=q<0.99&&t<a7;pose(ANA,SX+mix(19.65,22.5,q),mix(-12.75,-12.9,q),t*6,q>0&&q<1?0.7:0,Math.PI/2)}
  vkeys.visible=t<tKeys;
  // zombies at pharmacy front, then into alley entrance in a8+
  SZ.forEach((z,i)=>{z.p.g.visible=true;let x=SX+6.1+((i*7)%5)*0.55,zz=-7.2-(i%8)*0.72,r=Math.PI/2,amp=0.08;
    if(t>=a8&&i<12){const k=A(t,a8+1+i*0.35,a10+6);x=mix(SX+21.5+((i*13)%9)*0.5,SX+23+((i*5)%6)*0.5,0)+0;zz=mix(-0.5,-16-((i*3)%5),k);r=Math.PI;amp=0.45}
    pose(z.p,x,zz,t*3+z.ph,amp,r);z.p.arms.forEach(ar=>ar.rotation.x=-1.3)});
  DRV.g.visible=false;
- phL.intensity=2.4;brL.intensity=3.0;alAmb.position.set(SX+24,4,-14);alAmb.intensity=outside?2.5:0;sun.castShadow=outside;
+ BZ.forEach((z,i)=>{pose(z.p,z.x+Math.sin(t*0.2+i)*1.5,z.z,t*2+z.ph,0.3,-Math.PI/2+Math.sin(t*0.3+i)*0.6);z.p.arms.forEach(ar=>ar.rotation.x=-1.2)});
+ const blink=Math.sin(t*9)>0;pR.material.emissiveIntensity=blink?2.5:0.2;pB.material.emissiveIntensity=blink?0.2:2.5;polL.position.set(SX+22,1.8,-38.5);polL.color.setHex(blink?0xff3030:0x3050ff);polL.intensity=t>=a7?3:0;
+ const pov=t>=a7&&t<a9;hl.forEach(h=>h.visible=!pov);VAN.children.forEach(c=>{if(c.geometry&&c.geometry.parameters&&c.geometry.parameters.width<0.05&&c.geometry.parameters.depth>0.8)c.visible=!pov});
+ phL.intensity=2.4;brL.intensity=3.0;alAmb.position.set(SX+24,4,-14);alAmb.intensity=outside?2.5:0;sun.castShadow=false;
  // camera
  let cp,ct,fov=58;
  if(t<a2){cp=[SX+19.3,1.35,-11.5];ct=[SX+20.1,0.25,-13.45];fov=40}
