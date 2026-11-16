@@ -7,6 +7,11 @@ The owner posts manually at **18:00 Kyiv** daily. The episode must be finished a
 If the owner has not sent the vote screenshot / instructions, the agent makes the next episode itself so it is ready by 17:00.
 Before starting, check `swya/s1/eN/` for the next episode number N — if that folder already has the final mp4, the episode was already made in the main chat: do nothing.
 
+## VOTES FROM OWNER (read first!)
+The main chat writes real vote results here when the owner sends a screenshot. If the entry for the episode you are continuing is here, USE IT and say it honestly in the recap.
+- S1E6 (knock / barricade): per a viewer comment under E7, most chose **2 BARRICADE**; E7 went with knock by mistake (agent couldn't read comments). E8 recap acknowledges this honestly.
+- S1E7 (leave brother & take van / take him): **3/3 LEAVE HIM** (one: "leave him but ask him", one: "leave and call police").
+
 ## Votes — be honest
 - Count votes only from real comments (screenshot from owner, or YouTube Studio / TikTok via Claude in Chrome if connected).
 - If you could not read comments, continue the story with the option you think is best and **do not** claim viewers chose it (recap says what happened, without "the comments said").
