@@ -268,6 +268,11 @@ const pR=box(0.4,0.12,0.2,new THREE.MeshStandardMaterial({color:0xff2020,emissiv
 const polL=new THREE.PointLight(0xff3030,0,10,1.4);S.add(polL);
 const BZ=[];for(let i=0;i<5;i++){const z=walker({shirt:[0x4a3b3b,0x3b4a3b,0x555555,0x2b2f36,0x6a5a3a][i],pants:0x24262b,skin:0x6d7a5f,hair:0x1a1a1a});z.g.traverse(m=>{m.castShadow=false});
  [-.06,.06].forEach(x=>{const e=new THREE.Mesh(new THREE.SphereGeometry(.03,6,6),new THREE.MeshBasicMaterial({color:0xfff2c0}));e.position.set(x,.02,.16);z.h.add(e)});BZ.push({p:z,x:SX+10+i*7,z:-36+((i*3)%5)-2,ph:i*1.3})}
+
+// ---------- E9 extras ----------
+const gpiv=new THREE.Group();gpiv.position.set(21.25,0,-29);AL.add(gpiv);AL.remove(gate);gpiv.add(gate);gate.position.set(2.7,0,0);
+const latch=box(0.5,0.2,0.16,M(0xb8a040,{metalness:.8}),0,0.18,0.1,true,gate);
+const tiron=box(0.05,0.7,0.05,M(0x8a8f96,{metalness:.8,roughness:.3}),0,-0.6,0.15,true,SUIT.arms[1]);
 // ---------- overlay helpers ----------
 function tag(x,y,txt,bg,fg,sc,fs=34){if(sc<=0.01)return '';const w=txt.length*fs*.62+50,h=fs+30;return `<g transform="translate(${x},${y}) scale(${sc})"><rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx="${h/2}" fill="${bg}"/><text x="0" y="${fs*.36}" text-anchor="middle" font-size="${fs}" font-weight="800" fill="${fg}">${txt}</text></g>`}
 function paperTag(x,y,num,txt,sc){if(sc<=0.01)return '';const w=txt.length*30+150;return `<g transform="translate(${x},${y}) scale(${sc}) rotate(-3)"><rect x="${-w/2}" y="-46" width="${w}" height="92" fill="#f1ead8" stroke="#2a2418" stroke-width="3"/><text x="${-w/2+30}" y="18" font-family="DejaVu Serif" font-style="italic" font-size="44" fill="#c62828">${num}.</text><text x="${-w/2+90}" y="16" font-size="46" font-weight="800" fill="#1d1a14">${txt}</text></g>`}
@@ -275,7 +280,7 @@ function proj(v){const p=v.clone().project(cam);return [(p.x+1)/2*W,(1-p.y)/2*H]
 function label(v,txt,sub,col,sc,dx=0,dy=-230){if(sc<=0.01)return '';const [x,y]=proj(v);const lx=x+dx,ly=y+dy;const w=Math.max(txt.length*30,sub.length*17)+60;
  return `<g opacity="${cl(sc)}"><path d="M${x},${y} L${lx},${ly+40}" stroke="#fff" stroke-width="3" stroke-dasharray="6 6"/><circle cx="${x}" cy="${y}" r="9" fill="#fff"/><g transform="translate(${lx},${ly}) scale(${sc})"><rect x="${-w/2}" y="-40" width="${w}" height="80" rx="10" fill="${col}"/><text x="0" y="0" text-anchor="middle" font-size="40" font-weight="800" fill="#fff">${txt}</text><text x="0" y="28" text-anchor="middle" font-size="22" font-weight="700" fill="#fff" opacity=".85">${sub}</text></g></g>`}
 function captions(t){const c=TL.chunks.find(c=>t>=c.s-0.04&&t<c.e+0.1);if(!c)return '';const k=cl((t-c.s+0.04)/0.1);
- let parts='';c.w.forEach(([w,hl])=>{const col=hl?(/(died|hitting|broken|never|third|rail|zero|full|of|them|something|is|following|problem|run|through|door|second|faster|off|breathe|past|touch|trips|ten|centimeters|coming|back|jumps|hits|bite|someone|breathing|only|alone|inside|crawl|stop|look|cut|arm|no|locked|else|sound|they|hear|stops|loose|full|shaking|quiet|too|nobody|inside|alarm|screaming|come|out|dozens|of|them|driver|still|in|his|seat|seconds|run|lied|stopped|locked|someone|why|left|knock|lock|turns|metal|bar|bites|man|bandage|fever|opened|eyes|infected|word|nothing|doesn)/i.test(w)?'#FF3B30':'#FFD23F'):'#FFFFFF';parts+=`<tspan fill="${col}">${w.toUpperCase().replace(/&/g,'&amp;')} </tspan>`});
+ let parts='';c.w.forEach(([w,hl])=>{const col=hl?(/(died|hitting|broken|never|third|rail|zero|full|of|them|something|is|following|problem|run|through|door|second|reverse|now|bowling|wheezing|empty|break|doesnt|locked|faster|off|breathe|past|touch|trips|ten|centimeters|coming|back|jumps|hits|bite|someone|breathing|only|alone|inside|crawl|stop|look|cut|arm|no|locked|else|sound|they|hear|stops|loose|full|shaking|quiet|too|nobody|inside|alarm|screaming|come|out|dozens|of|them|driver|still|in|his|seat|seconds|run|lied|stopped|locked|someone|why|left|knock|lock|turns|metal|bar|bites|man|bandage|fever|opened|eyes|infected|word|nothing|doesn)/i.test(w)?'#FF3B30':'#FFD23F'):'#FFFFFF';parts+=`<tspan fill="${col}">${w.toUpperCase().replace(/&/g,'&amp;')} </tspan>`});
  return `<g transform="translate(540,1430) scale(${.93+.07*k})" opacity="${k}"><text x="0" y="0" text-anchor="middle" font-size="80" font-weight="800" stroke="#000" stroke-width="16" stroke-linejoin="round" paint-order="stroke">${parts}</text></g>`}
 function setMode(m,t){const red=m==='red';
  strips.forEach(s=>{s.material.emissive.setHex(red?0x550000:0xffffff);s.material.emissiveIntensity=red?(0.35+0.2*Math.sin(t*9)):1.2});
@@ -289,75 +294,70 @@ function render(t){
  const [_,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10]=a;
  strips.forEach(s=>s.visible=false);pls.forEach(p=>p.intensity=0);alarm.intensity=0;hemi.intensity=0;fig.visible=false;nextLight.intensity=0;
  [torch,flameL,tunAmb,camLamp,zLight,backL,sparkL,doorL,lampL,redL,roomAmb,entL,skyL].forEach(l=>l.intensity=0);stL.forEach(l=>l.intensity=0);
- ZB.g.visible=false;WK.g.visible=false;eyes.forEach(e=>e.visible=false);ZS.forEach(z=>z.p.g.visible=false);SUIT.flame.visible=false;
- S.background.setHex(0x9aa4b0);S.fog.color.setHex(0x9aa4b0);S.fog.near=18;S.fog.far=75;sun.intensity=1.6;skyH.intensity=1.1;R.toneMappingExposure=1.05;alL.intensity=0;
- const outside=t>=a6+0.6;
- const tClose=wT('a3','closes'),tKeys=wT('a4','keys'),tCrack=wT('a6','cracks'),tLock=wT('a8','locked');
- // brother eyes: open until he closes them
- const eo=t<tClose;broEyes.forEach(e=>{e.visible=!eo});yEyes.forEach(e=>e.visible=eo);BRO.arms[1].rotation.z=0.55;BRO.h.rotation.y=eo?-0.5:-0.2;BRO.g.position.y=0.2+0.006*Math.sin(t*20);
- radLed.visible=Math.sin(t*5)>-0.3;dpv.rotation.y=0.2;
- // van position
- const vz=t<a8?-12.0:mix(-12.0,-24.6,sm(A(t,a8+0.3,a8+6)));VAN.position.set(23.6,0,vz);
- hl.forEach(h=>h.material.emissiveIntensity=t>=a7?2:0);vanL.position.set(SX+23.6,1.0,vz-2.4);vanL.target.position.set(SX+23.6,0.3,vz-14);vanL.intensity=t>=a7?40:0;
- // group
- const P0={YOU:[18.2,-12.4,2.6],KID:[17.6,-12.9,2.2],NURSE:[18.7,-12.9,2.4],SUIT:[17.8,-11.7,2.6]};
- const kOut=A(t,a6+0.4,a7+0.3);
- [['YOU',YOU],['KID',KID],['NURSE',NURSE],['SUIT',SUIT]].forEach(([n,p],i)=>{p.g.rotation.order='XYZ';p.g.rotation.set(0,0,0);p.h.rotation.set(0,0,0);
-   let [x,z,r]=P0[n];let walk=0;
-   if(kOut>0){const q=cl(kOut*1.3-i*0.1);const d=[21.3,-13.3],v=[22.5,-12.0+(i-1.5)*0.3];walk=q>0&&q<1?1:0;
-     if(q<0.5){x=mix(P0[n][0],d[0],q*2);z=mix(P0[n][1],d[1],q*2);r=Math.PI/2}else{x=mix(d[0],v[0],(q-0.5)*2);z=mix(d[1],v[1],(q-0.5)*2);r=Math.PI/2}
-     p.g.visible=q<0.99&&t<a7}else p.g.visible=true;
-   pose(p,SX+x,z,t*6+i,walk*0.7,r)});
- YOU.arms[1].rotation.x=t>=tKeys&&t<a7?-1.2:YOU.arms[1].rotation.x;
- const ykeys=YOU.arms[1];
- // Ana
- ANA.g.visible=true;ANA.g.rotation.set(0,0,0);ANA.h.rotation.set(0,0,0);bar.visible=false;
- if(t<a6+0.4){const kk=A(t,a4,a4+1.2);pose(ANA,SX+mix(19.75,19.65,kk),mix(-13.97,-12.75,kk),0,0,mix(0.1,2.3,kk));
-   if(t>=a4){ANA.arms[1].rotation.x=t<tKeys?-1.4:-1.0;ANA.h.rotation.x=0.4}}
- else{const q=cl(kOut*1.3-0.45);ANA.g.visible=q<0.99&&t<a7;pose(ANA,SX+mix(19.65,22.5,q),mix(-12.75,-12.9,q),t*6,q>0&&q<1?0.7:0,Math.PI/2)}
- vkeys.visible=t<tKeys;
- // zombies at pharmacy front, then into alley entrance in a8+
- SZ.forEach((z,i)=>{z.p.g.visible=true;let x=SX+6.1+((i*7)%5)*0.55,zz=-7.2-(i%8)*0.72,r=Math.PI/2,amp=0.08;
-   if(t>=a8&&i<12){const k=A(t,a8+1+i*0.35,a10+6);x=mix(SX+21.5+((i*13)%9)*0.5,SX+23+((i*5)%6)*0.5,0)+0;zz=mix(-0.5,-16-((i*3)%5),k);r=Math.PI;amp=0.45}
-   pose(z.p,x,zz,t*3+z.ph,amp,r);z.p.arms.forEach(ar=>ar.rotation.x=-1.3)});
- DRV.g.visible=false;
+ ZB.g.visible=false;WK.g.visible=false;eyes.forEach(e=>e.visible=false);ZS.forEach(z=>z.p.g.visible=false);SUIT.flame.visible=false;DRV.g.visible=false;BRO.g.visible=false;
+ S.background.setHex(0x9aa4b0);S.fog.color.setHex(0x9aa4b0);S.fog.near=18;S.fog.far=75;sun.intensity=1.6;skyH.intensity=1.1;R.toneMappingExposure=1.05;alL.intensity=0;sun.castShadow=false;
+ phL.intensity=0;brL.intensity=0;alAmb.position.set(SX+24,4,-14);alAmb.intensity=2.5;
+ const tHit=a3+1.6;
+ // ---- van path
+ let vx=23.6,vz=-24.6,vr=0;
+ if(t>=a3&&t<a4+1){vz=t<tHit?mix(-24.6,-20.6,(A(t,a3+0.4,tHit))):mix(-20.6,-24.4,sm(A(t,tHit+0.6,a4)))}
+ const tOpen=wT('a7','open');
+ if(t>=a7){const k1=sm(A(t,tOpen+0.6,tOpen+4.0));vz=mix(-24.4,-36.6,k1);
+   if(t>tOpen+4.0){const k2=A(t,tOpen+4.0,a9);vr=mix(0,Math.PI/2,A(t,tOpen+4.0,tOpen+5.0));vx=mix(23.6,15.5,sm(k2))}}
+ VAN.position.set(vx,0,vz);VAN.rotation.y=vr;
+ hl.forEach(h=>{h.visible=true;h.material.emissiveIntensity=2});
+ const fx_=-Math.sin(vr),fz_=-Math.cos(vr);vanL.position.set(SX+vx+fx_*2.4,1.0,vz+fz_*2.4);vanL.target.position.set(SX+vx+fx_*14,0.3,vz+fz_*14);vanL.intensity=40;
+ // ---- gate
+ gpiv.rotation.y=-1.7*sm(A(t,tOpen-0.3,tOpen+1.2));latch.rotation.z=t>tOpen-0.5?1.2:0;
+ // ---- crowd behind van
+ SZ.forEach((z,i)=>{if(i>=14){z.p.g.visible=false;return}z.p.g.visible=true;z.p.g.rotation.set(0,0,0);
+   const lane=22.0+((i*5)%7)*0.6,row=Math.floor(i/5);let zz=-19.0+row*1.1-((i*3)%4)*0.25;
+   zz=Math.min(zz-Math.min(t,tHit)*0.04,zz);const front=row==0;
+   if(front&&t>=tHit){pose(z.p,SX+lane,zz,0,0,Math.PI);z.p.g.rotation.x=-1.5*sm(A(t,tHit,tHit+0.4));z.p.g.position.y=0.15;return}
+   const adv=t>tHit+3?(t-tHit-3)*0.25:0;pose(z.p,SX+lane,zz-adv,t*3+z.ph,0.45,Math.PI);z.p.arms.forEach(ar=>ar.rotation.x=-1.3)});
+ // ---- people
+ [NURSE,KID,YOU,ANA,SUIT].forEach(p=>{p.g.visible=false;p.g.rotation.set(0,0,0);p.h.rotation.set(0,0,0)});bar.visible=false;tiron.visible=false;
+ if(t>=a5&&t<tOpen+0.4&&!(t>=wT("a6","latch")-0.3&&t<a7)){SUIT.g.visible=true;tiron.visible=true;pose(SUIT,SX+24.1,-28.35,0,0,Math.PI);
+   let sw=0;[wT('a5','one'),wT('a5','two')].forEach(h=>{const d=t-h+0.25;if(d>0&&d<0.5)sw=Math.max(sw,Math.sin(d/0.5*Math.PI))});SUIT.arms[1].rotation.x=-2.6+1.6*sw;}
+ if(t>=a6&&t<tOpen+0.4){ANA.g.visible=true;pose(ANA,SX+22.5,-28.1,0,0,Math.PI-0.5);const k=A(t,wT('a6','latch')-0.4,wT('a6','latch'));ANA.arms[1].rotation.x=-0.5-0.6*k;ANA.h.rotation.x=0.5*k;ANA.g.rotation.x=0.25*k}
+ // ---- beyond-gate world
  BZ.forEach((z,i)=>{pose(z.p,z.x+Math.sin(t*0.2+i)*1.5,z.z,t*2+z.ph,0.3,-Math.PI/2+Math.sin(t*0.3+i)*0.6);z.p.arms.forEach(ar=>ar.rotation.x=-1.2)});
- const blink=Math.sin(t*9)>0;pR.material.emissiveIntensity=blink?2.5:0.2;pB.material.emissiveIntensity=blink?0.2:2.5;polL.position.set(SX+22,1.8,-38.5);polL.color.setHex(blink?0xff3030:0x3050ff);polL.intensity=t>=a7?3:0;
- const pov=t>=a7&&t<a9;hl.forEach(h=>h.visible=!pov);VAN.children.forEach(c=>{if(c.geometry&&c.geometry.parameters&&c.geometry.parameters.width<0.05&&c.geometry.parameters.depth>0.8)c.visible=!pov});
- phL.intensity=2.4;brL.intensity=3.0;alAmb.position.set(SX+24,4,-14);alAmb.intensity=outside?2.5:0;sun.castShadow=false;
- // camera
- let cp,ct,fov=58;
- if(t<a2){cp=[SX+19.3,1.35,-11.5];ct=[SX+20.1,0.25,-13.45];fov=40}
- else if(t<a3){const k=A(t,a2,a3);cp=[SX+mix(20.4,19.8,k),2.9,-9.3];ct=[SX+18.6,0.6,-12.8];fov=62}
- else if(t<a4){cp=[SX+19.1,1.55,-11.3];ct=[SX+20.0,0.3,-13.4];fov=46}
- else if(t<a5){const k=A(t,a4,a5);cp=[SX+20.5,2.1,-10.0];ct=[SX+18.8,0.9,-12.9];fov=mix(54,46,k)}
- else if(t<a6){cp=[SX+19.5,1.85,-10.2];ct=[SX+18.2,1.2,-12.4];fov=44}
- else if(t<a7){cp=[SX+25.0,2.7,-4.4];ct=[SX+22.2,1.0,-12.8];fov=58}
- else if(t<a8){cp=[SX+23.95,2.05,-11.3];ct=[SX+23.8,1.6,-24];fov=62}
- else if(t<a9){cp=[SX+23.95,2.05,vz+0.7];ct=[SX+23.8,1.5,vz-12];fov=62;if(t>tLock-0.4){ct=[SX+23.95,1.1,-29];fov=40}}
- else{const k=A(t,a9,a10+10);cp=[SX+mix(21.9,22.3,k),3.4,-30.8];ct=[SX+23.6,1.2,-16];fov=60}
+ const blink=Math.sin(t*9)>0;pR.material.emissiveIntensity=blink?2.5:0.2;pB.material.emissiveIntensity=blink?0.2:2.5;polL.position.set(SX+22,1.8,-38.5);polL.color.setHex(blink?0xff3030:0x3050ff);polL.intensity=3;
+ // ---- camera
+ let cp,ct,fov=58;const shake=(t>tHit&&t<tHit+0.5)?(1-(t-tHit)/0.5):0;
+ if(t<a2){cp=[SX+21.9,2.4,-26.4];ct=[SX+23.6,1.2,-19];fov=56}
+ else if(t<a3){const k=A(t,a2,a3);cp=[SX+mix(26.0,21.8,k),mix(5.5,4.2,k),mix(-31.5,-30.8,k)];ct=[SX+23.6,1.0,-22];fov=58}
+ else if(t<a4){cp=[SX+26.1+shake*0.08*Math.sin(t*70),3.6,-17.2];ct=[SX+23.4,0.8,-22.6];fov=62}
+ else if(t<a5){const k=A(t,a4,a5);cp=[SX+24.0,2.5,-33.5+k*0.6];ct=[SX+23.8,1.2,-22];fov=52}
+ else if(t<a6){cp=[SX+26.2,2.3,-25.0];ct=[SX+23.9,1.0,-28.6];fov=56}
+ else if(t<a7){const tl=wT('a6','latch');if(t<tl-0.3){cp=[SX+25.4,1.7,-26.4];ct=[SX+23.4,1.0,-28.6];fov=54}else{cp=[SX+24.9,0.75,-27.2];ct=[SX+23.95,0.2,-29];fov=50}}
+ else if(t<a8){cp=[SX+30.5,3.6,-41.0];ct=[SX+23.6,1.0,-31];fov=60}
+ else if(t<a9){cp=[SX+vx+6.5,4.0,-30.6];ct=[SX+vx,0.9,vz];fov=56}
+ else if(t<a10){cp=[SX+vx-6,3.0,-33.8];ct=[SX+vx+2,1.0,-37];fov=56}
+ else{cp=[SX+11.5,4.6,-31.5];ct=[SX+19,0.8,-38];fov=60}
  cam.position.set(...cp);cam.lookAt(...ct);cam.fov=fov;cam.updateProjectionMatrix();R.render(S,cam);
  // ---------- overlays ----------
- if(t<0.2)o+=`<rect width="1080" height="1920" fill="#000"/>`;
- if(t<a2+3){o+=`<g transform="translate(540,250) scale(${pop(t,0.3)}) rotate(-3)"><rect x="-430" y="-66" width="860" height="132" rx="16" fill="#E5383B"/><text x="0" y="23" text-anchor="middle" font-size="64" font-weight="800" fill="#fff">ZOMBIES ON THE SUBWAY</text></g>`+tag(540,375,'PART 8','#FFD23F','#111',pop(t,0.6),38)}
- if(t<a2&&t>0.8)o+=tag(540,480,'👁 HIS EYES ARE OPEN','#E5383B','#fff',pop(t,0.8),40);
- if(t>=a2&&t<a3){const it=[['knocked','✊ WE KNOCKED','#111','#fff'],['barricade','💬 MOST OF YOU SAID: BARRICADE','#FFD23F','#111'],['fair','🫡 FAIR. WE LISTEN NOW.','#fff','#111'],['comments','💬 COMMENTS: LEAVE HIM','#E5383B','#fff']];
+ if(t<0.15)o+=`<rect width="1080" height="1920" fill="#000"/>`;
+ if(t>tHit&&t<tHit+0.08)o+=`<rect width="1080" height="1920" fill="#fff" opacity="${.35*(1-(t-tHit)/.08)}"/>`;
+ if(t<a2+3){o+=`<g transform="translate(540,250) scale(${pop(t,0.2)}) rotate(-3)"><rect x="-430" y="-66" width="860" height="132" rx="16" fill="#E5383B"/><text x="0" y="23" text-anchor="middle" font-size="64" font-weight="800" fill="#fff">ZOMBIES ON THE SUBWAY</text></g>`+tag(540,375,'PART 9','#FFD23F','#111',pop(t,0.4),38)}
+ if(t<a2&&t>0.3)o+=tag(540,480,'⏪ REVERSE. NOW.','#E5383B','#fff',pop(t,0.3),42);
+ if(t>=a2&&t<a3){const it=[['locked','🔒 A LOCKED GATE','#111','#fff'],['open','💬 COMMENTS: OPEN IT BY HAND','#FFD23F','#111'],['reverse','💬 "REVERSE INTO THEM FIRST"','#2F7BE5','#fff'],['both','✅ WE DID BOTH','#1f9d55','#fff']];
    it.forEach(([w,txt,bg,fg],i)=>{const tw=wT('a2',w);if(t>tw-0.1)o+=tag(540,520+i*105,txt,bg,fg,pop(t,tw-0.1),34)})}
- if(t>=a3&&t<a4){if(t>wT('a3','bit')-0.2)o+=tag(540,260,'❓ "WHAT BIT YOU?"','#fff','#111',pop(t,wT('a3','bit')-0.2),40);if(t>wT('a3','kid')-0.1)o+=tag(540,370,'🧒 "A KID. AT THE STATION."','#E5383B','#fff',pop(t,wT('a3','kid')-0.1),38)}
- if(t>=a4&&t<a5&&t>tKeys-0.1)o+=tag(540,300,'🔑 THE VAN KEYS','#FFD23F','#111',pop(t,tKeys-0.1),44);
- if(t>=a5&&t<a6)o+=paperTag(540,250,8,'KEYS DECIDE WHO COMES',pop(t,a5+0.2));
- if(t>=a6&&t<a7){o+=tag(540,260,'🏃 10 STEPS TO THE VAN','#fff','#111',pop(t,a6+0.3),38);if(t>tCrack-0.1)o+=tag(540,370,'💥 THE FRONT GLASS CRACKS','#E5383B','#fff',pop(t,tCrack-0.1),36)}
- if(t>=a7&&t<a8&&t>wT('a7','i')-0.1)o+=tag(540,300,'🚐 I DRIVE','#FFD23F','#111',pop(t,wT('a7','i')-0.1),46);
- if(t>=a8&&t<a9){o+=tag(540,230,'ON PAPER:','#fff','#111',pop(t,wT('a8','paper')),38);if(t>wT('a8','full')-0.1)o+=tag(540,335,'⛽ FULL TANK ✅','#1f9d55','#fff',pop(t,wT('a8','full')-0.1),36);if(t>wT('a8','clear')-0.1)o+=tag(540,435,'🛣 ALLEY CLEAR ✅','#1f9d55','#fff',pop(t,wT('a8','clear')-0.1),36);if(t>tLock-0.1)o+=tag(540,540,'🔒 THE GATE IS LOCKED','#E5383B','#fff',pop(t,tLock-0.1),40)}
- if(t>=a9&&t<a10){o+=tag(540,200,'REAL FACT','#fff','#111',pop(t,a9+.1),32);if(t>wT('a9','airbags'))o+=tag(540,305,'💥 AIRBAGS CAN STOP THE CAR','#FFD23F','#111',pop(t,wT('a9','airbags')),34);o+=tag(540,410,'🧟 …AND THEY\'RE IN THE ALLEY','#E5383B','#fff',pop(t,a9+2),34)}
- if(t>=a10){const ta=wT('a10','ram'),tb=wT('a10','or'),tc=wT('a10','tell');o+=`<rect width="1080" height="1920" fill="#000" opacity=".55"/>`;
+ if(t>=a3&&t<a4){if(t>wT('a3','bowling')-0.1)o+=tag(540,260,'🎳 BOWLING PINS','#fff','#111',pop(t,wT('a3','bowling')-0.1),40);if(t>wT('a3','twenty')-0.1)o+=tag(540,370,'⏱ +20 SECONDS','#FFD23F','#111',pop(t,wT('a3','twenty')-0.1),40)}
+ if(t>=a4&&t<a5)o+=paperTag(540,250,9,'BUY TIME',pop(t,a4+0.2));
+ if(t>=a5&&t<a6){[['one','💥 HIT ONE'],['two','💥 HIT TWO']].forEach(([w,txt],i)=>{const tw=wT('a5',w);if(t>tw-0.1)o+=tag(540,260+i*100,txt,'#fff','#111',pop(t,tw-0.1),36)});if(t>wT('a5','doesnt')-0.1)o+=tag(540,460,'🔒 THE LOCK HOLDS','#E5383B','#fff',pop(t,wT('a5','doesnt')-0.1),38)}
+ if(t>=a6&&t<a7&&t>wT('a6','latch')-0.1){o+=tag(540,260,'👇 A SIMPLE LATCH','#1f9d55','#fff',pop(t,wT('a6','latch')-0.1),40);if(t>wT('a6','nobody')-0.1)o+=tag(540,370,'🤦 NOBODY LOOKED DOWN','#FFD23F','#111',pop(t,wT('a6','nobody')-0.1),36)}
+ if(t>=a7&&t<a8&&t>wT('a7','police')-0.1)o+=tag(540,300,'🚓 POLICE CAR · NOBODY INSIDE','#fff','#111',pop(t,wT('a7','police')-0.1),34);
+ if(t>=a8&&t<a9){o+=tag(540,230,'ON PAPER:','#fff','#111',pop(t,wT('a8','paper')),38);if(t>wT('a8','free')-0.1)o+=tag(540,335,'🛣 OPEN ROAD ✅','#1f9d55','#fff',pop(t,wT('a8','free')-0.1),36);if(t>wT('a8','full')-0.1)o+=tag(540,435,'⛽ FULL TANK ✅','#1f9d55','#fff',pop(t,wT('a8','full')-0.1),36);if(t>wT('a8','wheezing')-0.1)o+=tag(540,540,'🫁 THE KID IS WHEEZING','#E5383B','#fff',pop(t,wT('a8','wheezing')-0.1),38);if(t>wT('a8','almost')-0.1)o+=tag(540,645,'🔋 INHALER ALMOST EMPTY','#E5383B','#fff',pop(t,wT('a8','almost')-0.1),36)}
+ if(t>=a9&&t<a10){o+=tag(540,200,'REAL FACT','#fff','#111',pop(t,a9+.1),32);if(t>wT('a9','asthma')-0.2)o+=tag(540,305,'🏃 😨 ❄ → ASTHMA ATTACK','#FFD23F','#111',pop(t,wT('a9','asthma')-0.2),34)}
+ if(t>=a10){const ta=wT('a10','drive'),tb=wT('a10','or'),tc=wT('a10','tell');o+=`<rect width="1080" height="1920" fill="#000" opacity=".55"/>`;
    const opt=(y,txt,risk,col,k)=>k<=0?'':`<g transform="translate(540,${y}) scale(${k})"><rect x="-470" y="-120" width="940" height="240" rx="26" fill="#111418" stroke="${col}" stroke-width="7"/>${txt.map((l,i)=>`<text x="0" y="${-40+i*58}" text-anchor="middle" font-size="48" font-weight="800" fill="#fff">${l}</text>`).join('')}<text x="0" y="90" text-anchor="middle" font-size="30" font-weight="700" fill="${col}">${risk}</text></g>`;
    o+=tag(540,330,'WHAT WOULD YOU DO?','#FFD23F','#111',pop(t,a10+.2,.3),62);
-   o+=opt(630,['💥 RAM THE GATE','AND HOPE THE VAN KEEPS GOING…'],'risk: airbags — stuck in front of the gate','#E5383B',pop(t,ta,.3));
+   o+=opt(630,['🏥 DRIVE TO THE HOSPITAL','ACROSS THE BRIDGE…'],'risk: crowds on the way','#E5383B',pop(t,ta,.3));
    if(t>tb)o+=`<text x="540" y="832" text-anchor="middle" font-family="DejaVu Serif" font-style="italic" font-size="64" fill="#fff" opacity="${A(t,tb,tb+.3)}">…or</text>`;
-   o+=opt(1030,['✋ GET OUT AND OPEN IT','BY HAND?'],'risk: they\'re right behind us','#2F7BE5',pop(t,tb+.25,.3));
+   o+=opt(1030,['🚓 SEARCH THE EMPTY','POLICE CAR FOR SUPPLIES?'],'risk: why is it empty?','#2F7BE5',pop(t,tb+.25,.3));
    if(t>tc)o+=tag(540,1620,'💬 TELL ME IN THE COMMENTS','#fff','#111',pop(t,tc)*(1+.03*Math.sin(t*6)),46);
-   if(t>END('a10')){const k=A(t,END('a10'),END('a10')+0.4);o+=`<g opacity="${k}"><rect width="1080" height="1920" fill="#06070a"/><text x="540" y="860" text-anchor="middle" font-family="DejaVu Serif" font-style="italic" font-size="50" fill="#aab">part 9</text><text x="540" y="975" text-anchor="middle" font-size="96" font-weight="800" fill="#fff">TOMORROW</text><text x="540" y="1060" text-anchor="middle" font-size="40" font-weight="700" fill="#E5383B">you choose · they follow</text><text x="540" y="1140" text-anchor="middle" font-size="34" font-weight="600" fill="#889">follow to survive</text></g>`}}
+   if(t>END('a10')){const k=A(t,END('a10'),END('a10')+0.4);o+=`<g opacity="${k}"><rect width="1080" height="1920" fill="#06070a"/><text x="540" y="860" text-anchor="middle" font-family="DejaVu Serif" font-style="italic" font-size="50" fill="#aab">part 10</text><text x="540" y="975" text-anchor="middle" font-size="96" font-weight="800" fill="#fff">TOMORROW</text><text x="540" y="1060" text-anchor="middle" font-size="40" font-weight="700" fill="#E5383B">you choose · they follow</text><text x="540" y="1140" text-anchor="middle" font-size="34" font-weight="600" fill="#889">follow to survive</text></g>`}}
  o+=`<defs><radialGradient id="vg" cx=".5" cy=".45" r=".75"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".7"/></radialGradient></defs><rect width="1080" height="1920" fill="url(#vg)"/>`;
  if(t<END('a10'))o+=captions(t);
  document.getElementById('ov').innerHTML=o;}

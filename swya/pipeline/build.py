@@ -1,16 +1,16 @@
 import json,subprocess,wave,numpy as np
 from segs import segs
 T={
-'a1':"*His* *eyes* *are* *open.* *Nobody* *moves.*",
-'a2':"Part seven: we *knocked,* even though most of you said *barricade.* One of you *called* *us* *out.* *Fair.* This time, we *listen.* The *comments* said: *leave* *him.*",
-'a3':"But first, like one of you said, we *ask* *him.* What *bit* *you?* He whispers: *a* *kid.* *At* *the* *station.* Then he closes his eyes.",
-'a4':"*Ana* doesn't cry. She just touches his forehead... and puts the *keys* in my hand.",
-'a5':"*Rule* *number* *eight:* whoever holds the *keys* decides who comes with you.",
-'a6':"The *alley* *door.* *Ten* *steps* to the van. Behind us, the front glass *cracks.*",
-'a7':"*Everyone* *in.* Ana's hands are *shaking* too much to drive. So *I* *drive.*",
-'a8':"On paper, we're *out:* a *full* *tank,* and the alley is *clear.* *One* *problem...* the alley ends at a *gate.* And the gate is *locked.*",
-'a9':"*Real* *fact:* ramming something at speed can set off the *airbags,* and they can *stop* *a* *car* right where it hits.",
-'a10':"So, *what* *would* *you* *do?* Ram the gate, and hope the van keeps going... or get out and open it by hand, with them right behind us? *Tell* *me* in the comments. Part nine tomorrow."}
+'a1':"*Reverse.* *Now.*",
+'a2':"Part eight: we left him behind and took Ana's van. The alley ended at a *locked* *gate.* The *comments* said: *open* *it* *by* *hand.* And one of you said: *reverse* *into* *them* *first.* So we did *both.*",
+'a3':"I hit the gas, *backwards.* The van *slams* into the front of the crowd. They go down like *bowling* *pins.* It buys us maybe *twenty* *seconds.*",
+'a4':"*Rule* *number* *nine:* when you can't outrun them, *buy* *time.* Every second counts.",
+'a5':"The *suit* jumps out with a *tire* *iron.* *One* *hit.* *Two.* The lock *doesn't* *break.*",
+'a6':"Then *Ana* sees it. The lock was never the problem. There's a simple *latch* at the *bottom* of the gate. *Nobody* *looked* *down.*",
+'a7':"The gate swings *open.* We drive out onto the street, past a *police* *car* with its lights still on. *Nobody* *inside.*",
+'a8':"On paper, we're *free:* an open road and a *full* *tank.* *One* *problem...* the kid is *wheezing.* And his inhaler is *almost* *empty.*",
+'a9':"*Real* *fact:* running, fear and cold air can all trigger an *asthma* *attack.*",
+'a10':"So, *what* *would* *you* *do?* Drive to the hospital across the bridge, and risk the crowds... or stop at the empty police car, and search it for supplies? *Tell* *me* in the comments. Part ten tomorrow."}
 SR=24000;GAP_MAX=0.32
 def load(n):
     w=wave.open(f'audio/{n}.wav');sr=w.getframerate();x=np.frombuffer(w.readframes(w.getnframes()),np.int16).astype(float)/32768;r=np.sqrt((x[np.abs(x)>0.01]**2).mean());x=x/r*(0.085 if n in('a1','a7') else 0.1);return x,sr
@@ -25,7 +25,7 @@ for n in ['a%d'%i for i in range(1,11)]:
             gap=min(GAP_MAX,max(0.12,a-sg[i-1][1]));pieces.append(np.zeros(int(gap*sr)));cur+=gap
         seg=x[int(a2*sr):int(b2*sr)];newseg.append((cur+(a-a2),cur+(a-a2)+(b-a)));pieces.append(seg);cur+=len(seg)/sr
     y=np.concatenate(pieces);dur=len(y)/sr
-    gap_before={'a2':0.6,'a3':0.4,'a4':0.6,'a5':0.5,'a6':0.4,'a7':0.4,'a8':0.6,'a9':0.5,'a10':0.4}.get(n,0.18)
+    gap_before={'a2':0.5,'a3':0.4,'a4':0.5,'a5':0.4,'a6':0.5,'a7':0.5,'a8':0.5,'a9':0.5,'a10':0.4}.get(n,0.18)
     t+=gap_before if n!='a1' else 0.25
     words=T[n].split();tot_sp=sum(b-a for a,b in newseg);tot_c=sum(len(w.strip('*'))+1 for w in words)
     def at(f):

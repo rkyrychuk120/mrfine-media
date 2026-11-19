@@ -35,7 +35,7 @@ mus+=pad
 
 lvl=np.full(N,0.5)
 def seg(a,b,v):lvl[int(a*sr):int(b*sr)]=v
-seg(0,a2,0.15);seg(a2,a4,0.35);seg(a4,a6,0.3);seg(a6,a8,0.65);seg(a8,a9,0.45);seg(a9,D,0.6)
+seg(0,a2,0.6);seg(a2,a3,0.5);seg(a3,a4,0.85);seg(a4,a5,0.5);seg(a5,a7,0.3);seg(a7,a8,0.7);seg(a8,a9,0.35);seg(a9,D,0.6)
 lvl=np.convolve(lvl,np.ones(int(.25*sr))/(.25*sr),'same');mus*=lvl
 def door_hit(tt0,g=1):
     n=int(.6*sr);tt=np.arange(n)/sr
@@ -49,38 +49,39 @@ def door_hit(tt0,g=1):
 
 
 
-outside=t>=a6+0.6
+tHit=a3+1.6;tOpen=wT('a7','open')
 for buf,seed in ((fxL,3),(fxR,4)):
-    r=np.random.default_rng(seed);buf+=lp(r.standard_normal(N),120)*4*0.05*np.where(outside,1,0.3)
-# heartbeat a1 and a3
-for a_,b_ in ((0.2,a2),(a3,a4)):
-    for k in np.arange(a_,b_,0.78):
-        for d,g in ((0,1),(.17,.7)):n=int(.16*sr);add(fx,k+d,np.sin(2*np.pi*48*np.arange(n)/sr)*env(n,.003,.05)*g*0.9)
-# brother raspy breath a1-a3
-for q in np.arange(0.3,wT('a3','closes'),2.4):
-    n=int(1.1*sr);addS(q,lp(rng.standard_normal(n),5)*np.sin(np.pi*np.arange(n)/n)**2*(0.6+0.4*np.sin(2*np.pi*13*np.arange(n)/sr))*.07,1,0.3)
-# keys jingle
-tkk=wT('a4','keys');n=int(.6*sr);tt=np.arange(n)/sr
-add(fx,tkk,sum(np.sin(2*np.pi*f*tt)*(np.sin(2*np.pi*11*tt+i)>0.4) for i,f in enumerate((3100,4200,5300)))*env(n,.005,.2)*.05)
-# alley door + glass crack + running steps
-td=a6+0.5;n=int(.6*sr);tt=np.arange(n)/sr;add(fx,td,np.sin(2*np.pi*(240+60*tt)*tt+3*np.sin(2*np.pi*17*tt))*np.sin(np.pi*tt/0.6)*.07)
-tcr=wT('a6','cracks');n=int(.8*sr);tt=np.arange(n)/sr;add(fx,tcr,verb(lp(rng.standard_normal(n),2)*env(n,.001,.12)*0.6+sum(np.sin(2*np.pi*f*tt) for f in (2800,4100))*env(n,.001,.08)*.2,1.0),0.35)
-for tk in np.arange(a6+0.6,a7+0.3,0.3):
-    n=int(.08*sr);addS(tk,lp(rng.standard_normal(n),4)*env(n,.002,.02),0.2,rng.uniform(-.3,.3))
-# van doors + engine start + engine run
-for tk in (a7+0.2,a7+0.9,a7+1.4):
-    n=int(.3*sr);add(fx,tk,(np.sin(2*np.pi*70*np.arange(n)/sr)+lp(rng.standard_normal(n),15)*2)*env(n,.002,.08)*.35)
-ts=wT('a7','i');n=int(1.4*sr);tt=np.arange(n)/sr;add(fx,ts,(np.sign(np.sin(2*np.pi*(18+10*tt)*tt))*0.4+lp(rng.standard_normal(n),20)*2)*np.minimum(1,tt*3)*.12)
-eng=(t>=ts+1.2)&(t<a9)
-fx+=lp(np.sign(np.sin(2*np.pi*np.where((t>a8)&(t<a8+6),38,28)*t))*0.5+lp(rng.standard_normal(N),30)*2,8)*0.05*eng
-# brake squeal near gate
-tb=a8+5.6;n=int(1.0*sr);tt=np.arange(n)/sr;add(fx,tb,np.sin(2*np.pi*(2400+200*np.sin(tt*30))*tt)*env(n,.02,.3)*.05)
-tl0=wT('a8','locked');n=int(2.0*sr);tt=np.arange(n)/sr;add(fx,tl0,lp(sum(np.sign(np.sin(2*np.pi*f*tt))*a for f,a in ((32.7,1),(49,.7)))*env(n,.01,.7)*.18,8))
-# zombies entering alley
-for k in range(18):
-    tk=a8+1+rng.random()*(D-a8-2);n=int(1.3*sr);tt=np.arange(n)/sr;fq=rng.uniform(90,170)
+    r=np.random.default_rng(seed);buf+=lp(r.standard_normal(N),120)*4*0.05
+# engine idle + rev
+eng=lp(np.sign(np.sin(2*np.pi*np.where((t>a3+0.3)&(t<tHit),40,np.where(t>tOpen+0.5,34,24))*t))*0.5+lp(rng.standard_normal(N),30)*2,8)
+fx+=eng*0.045*((t<a5)|(t>tOpen+0.3))
+# reverse beeps + tire screech + impact
+for k in np.arange(a3,a3+1.4,0.5):
+    n=int(.25*sr);add(fx,k,np.sin(2*np.pi*1000*np.arange(n)/sr)*env(n,.005,.2)*.06)
+n=int(1.0*sr);tt=np.arange(n)/sr;add(fx,a3+0.4,lp(rng.standard_normal(n),2)*np.sin(2*np.pi*(1800+300*np.sin(tt*20))*tt)*np.sin(np.pi*tt)*.06)
+door_hit(tHit,1.4);n=int(.8*sr);add(fx,tHit,lp(rng.standard_normal(n),20)*env(n,.002,.2)*.6)
+for k in range(5):
+    n=int(.25*sr);addS(tHit+0.1+k*0.12,(np.sin(2*np.pi*60*np.arange(n)/sr)+lp(rng.standard_normal(n),10)*2)*env(n,.002,.06)*.25,1,rng.uniform(-.6,.6))
+# crowd groans continuous-ish (short events)
+for k in range(30):
+    tk=rng.random()*(a8);n=int(1.3*sr);tt=np.arange(n)/sr;fq=rng.uniform(90,170)
     addS(tk,verb(np.sin(2*np.pi*(fq-20*tt)*tt+3*np.sin(2*np.pi*rng.uniform(15,30)*tt))*np.sin(np.pi*tt/1.3)**2*.05,1.2),1,rng.uniform(-.8,.8))
-for w in ('ram','or'):
+# heartbeat a5-a6
+for k in np.arange(a5,a6+3,0.7):
+    for d,g in ((0,1),(.17,.7)):n=int(.16*sr);add(fx,k+d,np.sin(2*np.pi*48*np.arange(n)/sr)*env(n,.003,.05)*g*0.9)
+# tire iron hits (metal clang)
+for w in ('one','two'):
+    tk=wT('a5',w);n=int(1.2*sr);tt=np.arange(n)/sr;add(fx,tk,verb(sum(np.sin(2*np.pi*f*tt)*a for f,a in ((620,1),(1530,.6),(2890,.4),(4100,.25)))*env(n,.001,.25),0.8),0.25)
+# latch click + gate creak
+n=int(.1*sr);add(fx,tOpen-0.5,lp(rng.standard_normal(n),2)*env(n,.001,.02)*.6)
+n=int(1.4*sr);tt=np.arange(n)/sr;add(fx,tOpen-0.3,np.sin(2*np.pi*(260+90*tt)*tt+3*np.sin(2*np.pi*13*tt))*np.sin(np.pi*tt/1.4)*.08)
+# police car short siren chirp (<1.5s) when passing
+tp=wT('a7','police');n=int(1.2*sr);tt=np.arange(n)/sr;add(fx,tp,np.sign(np.sin(2*np.pi*(700+400*np.sin(2*np.pi*2*tt))*tt))*np.sin(np.pi*tt/1.2)*.02)
+# wheezing a8
+for k in np.arange(wT('a8','wheezing')-0.3,a10,1.6):
+    n=int(.9*sr);tt=np.arange(n)/sr;add(fx,k,lp(rng.standard_normal(n),3)*(0.5+0.5*np.sin(2*np.pi*480*tt))*np.sin(np.pi*tt/0.9)**2*.05)
+tw=wT('a8','one');n=int(2.0*sr);tt=np.arange(n)/sr;add(fx,tw,lp(sum(np.sign(np.sin(2*np.pi*f*tt))*a for f,a in ((32.7,1),(49,.7)))*env(n,.01,.7)*.16,8))
+for w in ('drive','or'):
     n=int(.5*sr);add(fx,wT('a10',w)-0.2,lp(rng.standard_normal(n),40)*np.sin(np.pi*np.arange(n)/n)**2*3)
 n=int(3*sr);tt=np.arange(n)/sr;add(fx,END('a10')+0.05,lp(sum(np.sign(np.sin(2*np.pi*f*tt))*a for f,a in ((36.7,1),(55,.8)))*env(n,.01,1.0)*.18,8))
 # --- voice + mix
