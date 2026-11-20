@@ -7,6 +7,12 @@ The owner posts manually at **18:00 Kyiv** daily. The episode must be finished a
 If the owner has not sent the vote screenshot / instructions, the agent makes the next episode itself so it is ready by 17:00.
 Before starting, check `swya/s1/eN/` for the next episode number N — if that folder already has the final mp4, the episode was already made in the main chat: do nothing.
 
+## SEASON 1 ENDING PLAN (owner, 20 Nov): season ends at E12 at the latest — steer to a logical ending NOW
+- E10: resolve the E9 vote (hospital across the bridge / search the empty police car). Either way the group learns there is a SAFE ZONE across the river bridge (police radio broadcast or hospital evacuation sign). Kid gets/doesn't get medicine depending on the vote. End on the bridge in sight.
+- E11: THE BRIDGE — military checkpoint, bite check. The kid's wheezing/coughing makes soldiers think he is infected. Choice must lead toward the finale (e.g. tell the truth about asthma and show the inhaler / sneak across another way).
+- E12 (FINALE, no new 2-way cliffhanger choice): they get into the safe zone; quiet emotional moment (Ana, the kid breathing, the group of 4 + Ana); the series rules recap ("12 rules"); last shot sets up Season 2 ("the safe zone isn't as safe as it looks"). End card: "SEASON 2 — coming soon · follow to survive". Ask viewers in comments what Season 2 location should be (e.g. 🏥 hospital / 🏬 mall / ✈ airport).
+- After E12: build the long YouTube compilation (cut recaps/choice cards, add "The comments chose: …" cards, blurred-background 16:9).
+
 ## VOTES FROM OWNER (read first!)
 The main chat writes real vote results here when the owner sends a screenshot. If the entry for the episode you are continuing is here, USE IT and say it honestly in the recap.
 - S1E6 (knock / barricade): per a viewer comment under E7, most chose **2 BARRICADE**; E7 went with knock by mistake (agent couldn't read comments). E8 recap acknowledges this honestly.
