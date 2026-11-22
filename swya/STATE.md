@@ -1,3 +1,5 @@
+# ⛔ SWYA PAUSED by owner on 22 Nov 2026 (low views; focus moved to Mr Fine). Do not produce new episodes unless the owner restarts it.
+
 # Survive Where You Are (SWYA) — series state & daily production guide
 
 Owner: Roman (King Bob). Channel: TikTok @survivewhereyouare, YouTube @SurviveWhereYouAre.
