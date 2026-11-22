@@ -1,0 +1,547 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000;overflow:hidden;width:1080px;height:1920px}#ov{position:absolute;left:0;top:0}text{font-family:Inter,sans-serif}</style></head><body>
+<script src="../node_modules/three/build/three.min.js"></script><script src="tl.js"></script>
+<svg id="ov" width="1080" height="1920" xmlns="http://www.w3.org/2000/svg"></svg>
+<script>
+const W=1080,H=1920;
+const cl=(v,a=0,b=1)=>Math.max(a,Math.min(b,v)),sm=v=>{v=cl(v);return v*v*(3-2*v)},A=(t,a,b)=>sm((t-a)/(b-a)),mix=(a,b,k)=>a+(b-a)*k;
+const pop=(t,a,d=.22)=>{const k=cl((t-a)/d);return k<=0?0:sm(k)*(1+.18*Math.sin(k*Math.PI))};
+const C=TL.clips.reduce((o,c)=>(o[c.n]=c,o),{});const END=n=>C[n].start+C[n].dur;
+function wT(clip,word,nth=0){let k=0;for(const ch of TL.chunks){if(ch.s<C[clip].start-0.01||ch.s>END(clip)+0.01)continue;for(const w of ch.w){if(w[0].toLowerCase().replace(/[^a-z0-9:%]/g,'').startsWith(word.toLowerCase())){if(k++==nth)return w[2]}}}console.log('miss',clip,word);return C[clip].start}
+const R=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});R.setSize(W,H);R.setPixelRatio(1);
+R.shadowMap.enabled=false;R.shadowMap.type=THREE.PCFSoftShadowMap;R.outputColorSpace=THREE.SRGBColorSpace;R.toneMapping=THREE.ACESFilmicToneMapping;
+document.body.insertBefore(R.domElement,document.getElementById('ov'));
+const S=new THREE.Scene();S.background=new THREE.Color(0x07090d);S.fog=new THREE.Fog(0x07090d,6,30);
+const cam=new THREE.PerspectiveCamera(56,W/H,0.05,120);
+const M=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.7,metalness:.05,flatShading:true},o));
+const box=(w,h,d,m,x,y,z,cast=true,parent=S)=>{const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);b.position.set(x,y,z);b.castShadow=cast;b.receiveShadow=true;parent.add(b);return b};
+const L=20,HW=1.45,HH=2.3;
+box(HW*2,0.1,L,M(0x3b4049,{roughness:.5}),0,0,-L/2,false);const ceil=box(HW*2,0.1,L,M(0xd9dde2),0,HH,-L/2,false);
+box(0.1,HH,L,M(0xb8bfc7),-HW,HH/2,-L/2,false);box(0.1,HH,L,M(0xb8bfc7),HW,HH/2,-L/2,false);box(HW*2,HH,0.1,M(0x9aa2ab),0,HH/2,0.05,false);
+const wm=M(0x9aa2ab);box(HW-0.45,HH,0.1,wm,-(0.45+(HW-0.45)/2),HH/2,-L);box(HW-0.45,HH,0.1,wm,(0.45+(HW-0.45)/2),HH/2,-L);box(0.9,HH-2.0,0.1,wm,0,2.0+(HH-2.0)/2,-L);
+const dg=new THREE.Group();dg.position.set(0,0,-L+0.06);S.add(dg);const dm=M(0x7b848f,{metalness:.45,roughness:.45});
+box(0.9,1.14,0.06,dm,0,0.57,0,true,dg);box(0.9,0.24,0.06,dm,0,1.88,0,true,dg);box(0.2,0.62,0.06,dm,-0.35,1.45,0,true,dg);box(0.2,0.62,0.06,dm,0.35,1.45,0,true,dg);
+box(0.5,0.62,0.02,new THREE.MeshStandardMaterial({color:0x223040,transparent:true,opacity:.28,roughness:.05,metalness:.3}),0,1.45,0.01,false,dg);
+const hpiv=new THREE.Group();hpiv.position.set(0.32,1.05,0.06);dg.add(hpiv);box(0.24,0.05,0.06,M(0xc9ced4,{metalness:.8,roughness:.3}),-0.1,0,0,true,hpiv);
+const lockM=new THREE.MeshStandardMaterial({color:0xb39a4a,metalness:.6,roughness:.4,emissive:0x000000});box(0.08,0.12,0.04,lockM,0.32,0.88,0.05,true,dg);
+const crack=new THREE.Group();crack.position.set(0.08,1.52,0.03);crack.scale.set(.45,.45,1);dg.add(crack);[[.25,.6],[.2,-.9],[.18,2.3],[.15,3.6]].forEach(([l,a])=>{const c=new THREE.Mesh(new THREE.BoxGeometry(l,.006,.004),new THREE.MeshBasicMaterial({color:0xdfe8f0}));c.position.set(Math.cos(a)*l/2,Math.sin(a)*l/2,0);c.rotation.z=a;crack.add(c)});
+box(3,2.6,0.1,M(0x111418),0,1.3,-L-3,false);
+const fig=new THREE.Group();fig.position.set(0,0,-L-0.45);S.add(fig);const zskin=M(0x6d7a5f),zcl=M(0x2b2f36);
+box(.5,.7,.28,zcl,0,1.15,0,true,fig);const zh=new THREE.Mesh(new THREE.IcosahedronGeometry(.19,0),zskin);zh.position.set(0,1.62,0);fig.add(zh);
+[-.07,.07].forEach(x=>{const e=new THREE.Mesh(new THREE.SphereGeometry(.022,6,6),new THREE.MeshBasicMaterial({color:0xfff2c0}));e.position.set(x,1.65,.17);fig.add(e)});
+const hand=new THREE.Group();fig.add(hand);box(.13,.15,.04,zskin,0,0,0,true,hand);[-.045,-.015,.015,.045].forEach((x,i)=>box(.024,.11+(i==1||i==2?.03:0),.03,zskin,x,.12,0,true,hand));
+const nextLight=new THREE.PointLight(0x9fff9a,0,3,2);nextLight.position.set(0,1.7,-L-1.4);S.add(nextLight);
+for(let z=-1.5;z>-L+1.5;z-=3.2){[-1,1].forEach(s=>{box(0.05,0.75,1.9,new THREE.MeshStandardMaterial({color:0x05070a,roughness:.08,metalness:.7}),s*(HW-0.04),1.55,z);
+ box(0.55,0.12,2.6,M(0x2e5aa8),s*(HW-0.32),0.48,z);box(0.12,0.55,2.6,M(0x3566bd),s*(HW-0.08),0.75,z);box(0.06,0.42,2.6,M(0x203f78),s*(HW-0.58),0.25,z)});
+ [-1,1].forEach(s=>{const p=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,HH,8),M(0xe6e9ec,{metalness:.85,roughness:.25}));p.position.set(s*0.75,HH/2,z-1.6);p.castShadow=true;S.add(p)})}
+const tl=[];for(let i=0;i<12;i++){[-1,1].forEach(s=>{const m=new THREE.Mesh(new THREE.SphereGeometry(.04,6,6),new THREE.MeshBasicMaterial({color:0xffcf7a}));m.position.set(s*(HW+0.6),1.5,-i*2);S.add(m);tl.push(m)})}
+const strips=[];for(let z=-1;z>-L;z-=2.2){strips.push(box(0.35,0.04,1.3,new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xffffff,emissiveIntensity:1.2}),0,HH-0.07,z,false))}
+const hemi=new THREE.HemisphereLight(0x8a95b0,0x120c0e,0.9);S.add(hemi);
+const pls=[];for(let z=-2;z>-L;z-=4.5){const p=new THREE.PointLight(0xf3f6ff,9,8,1.8);p.position.set(0,HH-0.3,z);p.castShadow=z>-9;p.shadow.mapSize.set(512,512);S.add(p);pls.push(p)}
+const topFill=new THREE.DirectionalLight(0xbfd0ff,0);topFill.position.set(1,10,-8);topFill.target.position.set(0,0,-8);topFill.castShadow=true;topFill.shadow.mapSize.set(1024,1024);topFill.shadow.camera.left=-4;topFill.shadow.camera.right=4;topFill.shadow.camera.top=12;topFill.shadow.camera.bottom=-12;S.add(topFill);S.add(topFill.target);
+const alarm=new THREE.PointLight(0xff1a0a,0,7,1.4);alarm.position.set(0,1.9,-L+1.2);S.add(alarm);
+
+// ---------- door hinge for burst (car end) ----------
+const hinge=new THREE.Group();hinge.position.set(-0.45,0,-L+0.06);S.add(hinge);S.remove(dg);dg.position.set(0.45,0,0);hinge.add(dg);
+// ---------- walkers with arms, eyes ----------
+function walker(o){const g=new THREE.Group();const skin=M(o.skin||0xc99d7c),pants=M(o.pants||0x22252b),sh=M(o.shirt);
+ const torso=box(.42,.6,.26,sh,0,1.25,0,true,g);
+ const legs=[-.11,.11].map(x=>{const p=new THREE.Group();p.position.set(x,.9,0);g.add(p);box(.16,.86,.16,pants,0,-.43,0,true,p);box(.17,.08,.24,M(0x15161a),0,-.86,.04,true,p);return p});
+ const arms=[-.29,.29].map(x=>{const p=new THREE.Group();p.position.set(x,1.5,0);g.add(p);box(.13,.56,.13,sh,0,-.27,0,true,p);box(.12,.12,.12,skin,0,-.58,0,true,p);return p});
+ const hy=1.75;const h=new THREE.Mesh(new THREE.IcosahedronGeometry(.17,0),skin);h.position.y=hy;h.castShadow=true;g.add(h);
+ const hair=new THREE.Mesh(new THREE.IcosahedronGeometry(.18,0),M(o.hair||0x2b221d));hair.position.set(0,.07,-.045);hair.scale.set(1.08,.7,1.08);h.add(hair);if(o.long)box(.36,.42,.12,M(o.hair),0,-.16,-.15,true,h);
+ [-.06,.06].forEach(x=>box(.05,.065,.02,new THREE.MeshBasicMaterial({color:0x0a0a0a}),x,.015,.158,false,h));
+ let phone=null,flame=null;
+ if(o.phone){phone=new THREE.Mesh(new THREE.BoxGeometry(.08,.02,.15),new THREE.MeshStandardMaterial({color:0x1a1d22,emissive:0x6fa8ff,emissiveIntensity:1.2}));phone.position.set(0,-.66,.03);arms[1].add(phone)}
+ if(o.lighter){flame=new THREE.Mesh(new THREE.SphereGeometry(.035,6,6),new THREE.MeshBasicMaterial({color:0xffb347}));flame.position.set(0,-.7,.02);arms[1].add(flame)}
+ if(o.brief)box(.36,.28,.09,M(0x4a2f1e),0,-.75,0,true,arms[0]);
+ if(o.phones){const hp=new THREE.Mesh(new THREE.TorusGeometry(.19,.03,6,10,Math.PI),M(0xE5383B));hp.rotation.y=Math.PI/2;h.add(hp)}
+ S.add(g);return {g,h,legs,arms,phone,flame,o}}
+function pose(p,x,z,ph,amp,rot){p.g.position.set(x,Math.abs(Math.sin(ph))*amp*0.06,z);p.g.rotation.y=rot;
+ p.legs[0].rotation.x=Math.sin(ph)*amp*0.6;p.legs[1].rotation.x=-Math.sin(ph)*amp*0.6;
+ p.arms[0].rotation.x=-Math.sin(ph)*amp*0.5;p.arms[1].rotation.x=p.phone||p.flame?-1.15+Math.sin(ph*2)*0.04:Math.sin(ph)*amp*0.5}
+// ---------- tunnel (x=60), long ----------
+const TX=60;const tun=new THREE.Group();tun.position.set(TX,0,0);S.add(tun);
+const tm=M(0x2b3038),tm2=M(0x252930);for(let z=24;z>-96;z-=1.2){for(let k=0;k<=8;k++){const a=Math.PI*k/8;const seg=box(0.5,0.18,1.15,(k+Math.round(z))%3?tm:tm2,Math.cos(a)*2.4,0.2+Math.sin(a)*2.6,z,false,tun);seg.rotation.z=a+Math.PI/2}
+ box(1.9,0.06,0.18,M(0x3a2a1c),0,0.05,z,false,tun)}
+box(6,0.1,130,M(0x15181d),0,0,-36,false,tun);
+[-0.72,0.72].forEach(x=>box(0.07,0.1,130,M(0x8a8f96,{metalness:.8,roughness:.3}),x,0.12,-36,true,tun));
+const third=box(0.12,0.14,130,new THREE.MeshStandardMaterial({color:0xd8b23a,emissive:0x000000,metalness:.6}),1.35,0.15,-36,true,tun);
+// cables on wall
+for(let i=0;i<3;i++)box(0.04,0.04,130,M(0x111111),2.15,1.2+i*0.12,-36,false,tun);
+// service door
+const SDZ=-50;const sdoor=new THREE.Group();sdoor.position.set(-1.95,0,SDZ);tun.add(sdoor);
+box(0.12,2.0,1.1,M(0x7a8594,{metalness:.5,roughness:.45}),0,1.0,0,true,sdoor);box(0.1,2.2,1.3,M(0x30353c),-0.04,1.05,0,false,sdoor);box(0.14,0.1,0.18,M(0xc9ced4,{metalness:.8}),0.07,1.0,0.35,true,sdoor);
+const doorL=new THREE.PointLight(0xdfffe8,0,6,1.4);doorL.position.set(TX-1.4,2.4,SDZ+0.6);S.add(doorL);
+const ssign=box(0.04,0.22,0.7,new THREE.MeshStandardMaterial({color:0xe8e8e8,emissive:0xffffff,emissiveIntensity:0.0}),0.08,2.2,0,false,sdoor);
+// zombie eyes behind
+const eyes=[];for(let i=0;i<5;i++){const g=new THREE.Group();[-.07,.07].forEach(x=>{const e=new THREE.Mesh(new THREE.SphereGeometry(.05,6,6),new THREE.MeshBasicMaterial({color:0xfff2c0}));e.position.x=x*1.4;g.add(e)});g.visible=false;S.add(g);eyes.push(g)}
+const NURSE=walker({shirt:0x3fb6a8,pants:0x3fb6a8,hair:0x6b3e26,phone:true});
+const SUIT=walker({shirt:0x2d3139,pants:0x2d3139,lighter:true,brief:true});
+const KID=walker({shirt:0xE8A23B});
+const YOU=walker({shirt:0x5a5f6a,pants:0x2a2d33,hair:0x1b1512});
+const ZB=walker({shirt:0x2b2f36,pants:0x24262b,skin:0x6d7a5f,hair:0x1a1a1a});
+[-.06,.06].forEach(x=>{const e=new THREE.Mesh(new THREE.SphereGeometry(.035,6,6),new THREE.MeshBasicMaterial({color:0xfff2c0}));e.position.set(x,.02,.16);ZB.h.add(e)});
+const zLight=new THREE.PointLight(0xff3020,0,5,1.5);S.add(zLight);
+const sparks=[];for(let i=0;i<8;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(.02,4,4),new THREE.MeshBasicMaterial({color:0xfff0a0}));m.visible=false;S.add(m);sparks.push(m)}
+const backL=new THREE.PointLight(0x6f8cff,0,14,1.2);S.add(backL);
+const sparkL=new THREE.PointLight(0x9fd0ff,0,3,1.5);S.add(sparkL);
+const torch=new THREE.SpotLight(0xfff2d8,0,26,0.42,0.55,1.3);torch.castShadow=true;torch.shadow.mapSize.set(1024,1024);S.add(torch);S.add(torch.target);
+const flameL=new THREE.PointLight(0xffa040,0,4,1.6);S.add(flameL);
+const tunAmb=new THREE.HemisphereLight(0x46507a,0x0a0a0c,0);S.add(tunAmb);
+const camLamp=new THREE.PointLight(0x8090c0,0,6,1.5);S.add(camLamp);
+
+// ---------- service room at x=120 ----------
+const RX=120;const room=new THREE.Group();room.position.set(RX,0,0);S.add(room);
+const wallM=M(0x4a4f57),floorM=M(0x2a2c30);
+box(4,0.1,4.4,floorM,0,0,0,false,room);box(4,0.1,4.4,M(0x3a3e45),0,2.6,0,false,room);
+box(0.1,2.6,4.4,wallM,-2,1.3,0,false,room);box(0.1,2.6,4.4,wallM,2,1.3,0,false,room);box(4,2.6,0.1,wallM,0,1.3,-2.2,false,room);
+box(1.5,2.6,0.1,wallM,-1.25,1.3,2.2,false,room);box(1.5,2.6,0.1,wallM,1.25,1.3,2.2,false,room);box(1,0.5,0.1,wallM,0,2.35,2.2,false,room);
+const rdoor=new THREE.Group();rdoor.position.set(0,0,2.18);room.add(rdoor);box(1,2.1,0.08,M(0x7a8594,{metalness:.5,roughness:.45}),0,1.05,0,true,rdoor);
+const rbolt=box(0.22,0.06,0.06,M(0xc9ced4,{metalness:.8}),0.25,1.0,-0.07,true,rdoor);
+// shelves left wall
+for(let i=0;i<3;i++)box(0.45,0.05,1.8,M(0x6b5a3a),-1.75,0.6+i*0.6,-0.6,true,room);
+const items=[];
+for(let j=0;j<5;j++)items.push(box(0.12,0.28,0.12,new THREE.MeshStandardMaterial({color:0x4aa3ff,transparent:true,opacity:.85,roughness:.1}),-1.75,0.79,-1.3+j*0.22,true,room));
+const kit=box(0.32,0.22,0.4,M(0xf2f2f2),-1.75,1.36,-0.3,true,room);box(0.01,0.12,0.04,M(0xd32f2f),-1.54,1.36,-0.3,false,room);box(0.01,0.04,0.12,M(0xd32f2f),-1.54,1.36,-0.3,false,room);
+const radio=box(0.3,0.2,0.18,M(0x222428),-1.75,1.96,-1.1,true,room);box(0.02,0.35,0.02,M(0x999999),-1.68,2.2,-1.15,false,room);
+// map poster on back wall
+const mapP=box(1.2,0.8,0.02,new THREE.MeshStandardMaterial({color:0xe8e2cf,emissive:0x222018}),0.3,1.6,-2.14,false,room);
+[[0,0x2a6fd6],[1,0xd63a2a],[2,0x2aa64a]].forEach(([i,c])=>{const l=box(1.0,0.03,0.01,M(c),0.3,1.4+i*0.18,-2.12,false,room);l.rotation.z=(i-1)*0.25});
+// vent grate right wall high
+const vent=box(0.04,0.6,0.7,M(0x15171a),1.96,2.0,-1.2,false,room);for(let i=0;i<5;i++)box(0.03,0.04,0.7,M(0x8a8f96,{metalness:.7}),1.93,1.78+i*0.11,-1.2,false,room);
+// lamp
+const lampM=new THREE.MeshStandardMaterial({color:0xfff3c8,emissive:0xfff3c8,emissiveIntensity:0});const lampB=box(0.25,0.08,0.25,lampM,0,2.5,0,false,room);
+const lampL=new THREE.PointLight(0xfff0c8,0,8,1.6);lampL.position.set(RX,2.35,0);lampL.castShadow=true;lampL.shadow.mapSize.set(512,512);S.add(lampL);
+const redL=new THREE.PointLight(0xff2a1a,0,6,1.3);redL.position.set(RX,2.3,1.6);S.add(redL);
+const roomAmb=new THREE.HemisphereLight(0x50587a,0x0c0c0e,0);S.add(roomAmb);
+// worker sitting in back-right corner
+const WK=walker({shirt:0xff7a1a,pants:0x2a3550,hair:0x3a2a1a});box(.43,.06,.27,new THREE.MeshStandardMaterial({color:0xdddddd,emissive:0x777777}),0,1.2,0,false,WK.g);
+box(.36,.1,.36,M(0xffd23f),0,.2,0,true,WK.h);const bite=box(.15,.12,.15,M(0x8b0000),0,-.35,0.01,false,WK.arms[0]);
+const keys=box(.06,.1,.03,M(0xd4af37,{metalness:.9,roughness:.3}),0.2,0.95,0.15,false,WK.g);
+
+// ---------- vent + station at x=180 ----------
+const VX=180,VY=5.5;const vg=new THREE.Group();vg.position.set(VX,0,0);S.add(vg);
+const ductM=M(0x8a919a,{metalness:.15,roughness:.6}),ductM2=M(0x767d86,{metalness:.15,roughness:.6});
+for(let z=12;z>-22;z-=1.0){const m=(Math.round(z)%2)?ductM:ductM2;
+ if(Math.abs(z+12)>0.6)box(1.0,0.06,1.0,m,0,VY,z,false,vg);
+ box(1.0,0.06,1.0,m,0,VY+0.95,z,false,vg);box(0.06,1.0,1.0,m,-0.5,VY+0.48,z,false,vg);box(0.06,1.0,1.0,m,0.5,VY+0.48,z,false,vg);
+ box(1.02,0.04,0.04,M(0x3a3f45),0,VY+0.95,z+0.5,false,vg)}
+const grate=new THREE.Group();grate.position.set(0,VY,-12);vg.add(grate);for(let i=0;i<6;i++)box(0.04,0.04,0.95,M(0x9aa0a8,{metalness:.8}),-0.4+i*0.16,0,0,false,grate);
+const screw=box(0.04,0.04,0.04,M(0xc9ced4,{metalness:.9}),0.42,VY+0.03,-11.6,false,vg);
+// vertical shaft up at z=-20
+for(let y=VY+1;y<VY+12;y+=1){box(1.0,1.0,0.06,ductM,0,y,-19.5,false,vg);box(1.0,1.0,0.06,ductM,0,y,-20.5,false,vg);box(0.06,1.0,1.0,ductM2,-0.5,y,-20,false,vg);box(0.06,1.0,1.0,ductM2,0.5,y,-20,false,vg);box(0.5,0.04,0.04,M(0xb0b5bb,{metalness:.8}),0,y,-19.55,false,vg)}
+const sky=box(1.0,0.05,1.0,new THREE.MeshBasicMaterial({color:0xcfe0ff}),0,VY+12,-20,false,vg);const skyL=new THREE.PointLight(0xcfe0ff,0,14,1.2);skyL.position.set(VX,VY+11,-20);S.add(skyL);
+// vent entrance glow (service room) at z=12
+const entL=new THREE.PointLight(0xfff0c8,0,10,1.3);entL.position.set(VX,VY+0.5,12.4);S.add(entL);box(1,1,0.05,new THREE.MeshBasicMaterial({color:0x2a2620}),0,VY+0.48,12.5,false,vg);
+// station below
+box(14,0.1,30,M(0x8a8478),0,0,-12,false,vg);box(4,1.1,30,M(0x1a1c20),5,-0.5,-12,false,vg);
+for(let i=0;i<8;i++){const p=box(0.5,5.4,0.5,M(0x9a9488),-4,2.7,-2-i*3.2,false,vg)}
+box(14,0.1,30,M(0x2a2c30),0,5.45,-12,false,vg);
+const stairs=new THREE.Group();stairs.position.set(-2,0,-27);vg.add(stairs);for(let i=0;i<10;i++)box(3,0.25,0.5,M(0xb0aa9c),0,0.12+i*0.25,-i*0.45,false,stairs);
+const exitSign=box(1.4,0.4,0.05,new THREE.MeshStandardMaterial({color:0x1aa64a,emissive:0x1aa64a,emissiveIntensity:1.6}),-2,3.4,-26.6,false,vg);
+const stL=[];for(let i=0;i<4;i++){const l=new THREE.PointLight(0xd8e6ff,0,10,1.4);l.position.set(VX+(i%2?2:-2),4.6,-4-i*6);S.add(l);stL.push(l)}
+const ZS=[];const zr=(k)=>{const x=Math.sin(k*12.9898)*43758.5453;return x-Math.floor(x)};
+for(let i=0;i<26;i++){const z=walker({shirt:[0x2b2f36,0x4a3b3b,0x3b4a3b,0x3b3b4a,0x555555][i%5],pants:0x24262b,skin:0x6d7a5f,hair:0x1a1a1a});z.g.traverse(m=>{m.castShadow=false});
+ const ex=[-.06,.06].map(x=>{const e=new THREE.Mesh(new THREE.SphereGeometry(.03,6,6),new THREE.MeshBasicMaterial({color:0xfff2c0}));e.position.set(x,.02,.16);z.h.add(e);return e});
+ ZS.push({p:z,x:VX-4+zr(i)*8.5,z:-3-zr(i+40)*21,r:zr(i+80)*6.28,ph:zr(i+90)*6})}
+
+// ---------- street at x=260 ----------
+const SX=260;const st=new THREE.Group();st.position.set(SX,0,0);S.add(st);
+box(30,0.1,80,M(0x3d4045),0,-0.05,-20,false,st);[-6.5,6.5].forEach(x=>box(5,0.25,80,M(0x8d8a84),x,0.07,-20,false,st));
+for(let z=10;z>-60;z-=6)box(0.25,0.02,2.5,M(0xe8e2c0),0,0.01,z,false,st);
+const bcols=[0x6b5a4a,0x5a6070,0x7a6a5a,0x4a5560,0x6a4a4a];
+for(let i=0;i<9;i++)[-1,1].forEach(sd=>{const h=10+((i*7+(sd>0?3:0))%5)*3;const c=bcols[(i+(sd>0?2:0))%5];const z=6-i*8;
+ box(8,h,7.6,M(c),sd*13,h/2,z,false,st);
+ for(let fy=2;fy<h-1;fy+=2.4)for(let fz=-2.8;fz<=2.8;fz+=1.8)box(0.05,1.2,0.9,new THREE.MeshStandardMaterial({color:0x1d232b,emissive:((i+fy+fz)%7<1)?0x2a2418:0x000000}),sd*8.97,fy,z+fz,false,st)});
+// pharmacy
+box(0.1,3,6,M(0xdfe9e2),8.95,1.5,-8,false,st);const pcross=new THREE.Group();pcross.position.set(8.85,4.2,-8);st.add(pcross);
+const pcm=new THREE.MeshStandardMaterial({color:0x1aa64a,emissive:0x1aa64a,emissiveIntensity:1.4});box(0.1,0.9,0.3,pcm,0,0,0,false,pcross);box(0.1,0.3,0.9,pcm,0,0,0,false,pcross);
+// cars
+const cars=[];const carC=[0x8a2a2a,0x2a4a8a,0xbcbcbc,0x2a2a2a,0x6a7a3a,0xa0a0a0,0x8a6a2a,0x3a3a5a];
+[[-3,-4,0.2],[2.6,-12,-0.3],[-2.5,-18,0.5],[3,-24,0.1],[-3.2,-30,-0.2],[2.4,-36,0.4],[-2.8,4,0.1],[3.2,-44,0]].forEach(([x,z,r],i)=>{const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=r;st.add(g);
+ box(1.8,0.7,4.2,M(carC[i]),0,0.55,0,true,g);box(1.6,0.6,2.2,M(0x1d232b),0,1.15,-0.2,true,g);[[-.8,1.3],[.8,1.3],[-.8,-1.3],[.8,-1.3]].forEach(([wx,wz])=>box(0.25,0.55,0.55,M(0x111111),wx,0.28,wz,false,g));
+ if(i%2==0){const d=box(0.06,0.6,1.1,M(carC[i]),0.95,0.6,0.5,true,g);d.rotation.y=-0.9;d.position.x=1.3;d.position.z=0.9}
+ cars.push(g)});
+const alarmCar=cars[5];const alL=new THREE.PointLight(0xffa020,0,14,1.3);alL.position.set(SX+2.4,1.2,-36);S.add(alL);
+// bus on left lane near grate
+const bus=new THREE.Group();bus.position.set(-3.3,0,-2);st.add(bus);box(2.6,2.9,11,M(0xe8c23a),0,1.75,0,true,bus);
+for(let z=-4.5;z<=4.5;z+=1.5)[-1,1].forEach(sd=>box(0.05,1.0,1.2,M(0x1d232b),sd*1.31,2.3,z,false,bus));box(2.4,1.2,0.05,new THREE.MeshStandardMaterial({color:0x1d232b,transparent:true,opacity:.3}),0,2.3,-5.51,false,bus);
+const bdoor=box(0.06,2.0,1.0,M(0x222222),1.32,1.3,-3.2,false,bus);bdoor.position.x=1.6;bdoor.rotation.y=-1.2;
+const DRV=walker({shirt:0x34495e,pants:0x24262b,skin:0x6d7a5f,hair:0x1a1a1a});[-.06,.06].forEach(x=>{const e=new THREE.Mesh(new THREE.SphereGeometry(.03,6,6),new THREE.MeshBasicMaterial({color:0xfff2c0}));e.position.set(x,.02,.16);DRV.h.add(e)});
+// street grate (near origin, right sidewalk edge)
+const sgr=new THREE.Group();sgr.position.set(0.9,0.02,2.5);st.add(sgr);for(let i=0;i<6;i++)box(0.06,0.06,1.0,M(0x50555c,{metalness:.6}),-0.45+i*0.18,0,0,true,sgr);box(1.1,0.06,0.08,M(0x50555c),0,0,-0.48,true,sgr);box(1.1,0.06,0.08,M(0x50555c),0,0,0.48,true,sgr);
+const SZ=[];for(let i=0;i<22;i++){const z=walker({shirt:[0x2b2f36,0x4a3b3b,0x3b4a3b,0x3b3b4a,0x555555,0x6a5a3a][i%6],pants:0x24262b,skin:0x6d7a5f,hair:0x1a1a1a});z.g.traverse(m=>{m.castShadow=false});
+ [-.06,.06].forEach(x=>{const e=new THREE.Mesh(new THREE.SphereGeometry(.03,6,6),new THREE.MeshBasicMaterial({color:0xfff2c0}));e.position.set(x,.02,.16);z.h.add(e)});
+ const zr=k=>{const x=Math.sin(k*91.7)*43758.5453;return x-Math.floor(x)};const sd=i%2?1:-1;
+ SZ.push({p:z,x0:SX+sd*(6.5+zr(i)*2.5),z0:-6-zr(i+5)*34,x1:SX-3+zr(i+9)*6,ph:zr(i+3)*6,del:zr(i+7)*2.5})}
+const sun=new THREE.DirectionalLight(0xdfe6f0,0);sun.position.set(SX+20,40,10);sun.target.position.set(SX,0,-15);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-25;sun.shadow.camera.right=25;sun.shadow.camera.top=40;sun.shadow.camera.bottom=-40;S.add(sun);S.add(sun.target);
+const skyH=new THREE.HemisphereLight(0xb8c4d4,0x3a3a3a,0);S.add(skyH);
+
+// ---------- pharmacy interior inside right building (street local x 9..17, z -13.6..-6.4) ----------
+st.children.forEach(c=>{const p=c.position;if(c.geometry&&c.geometry.parameters){const g=c.geometry.parameters;
+ if(Math.abs(p.x-13)<0.1&&p.z<-6&&p.z>-14&&g.height>5)c.visible=false;
+ if(Math.abs(p.x-8.97)<0.05&&p.z<-6.2&&p.z>-13.8)c.visible=false;
+ if(Math.abs(p.x-8.95)<0.05&&Math.abs(p.z+8)<0.1)c.visible=false;}});
+pcross.position.set(8.85,3.5,-10);
+const PH=new THREE.Group();st.add(PH);const wallP=M(0xe9ece6),flP=M(0xcfd3cc);
+box(8,0.06,7.2,flP,13,0.03,-10,false,PH);box(8,0.1,7.2,M(0xdcdcd4),13,3.2,-10,false,PH);
+box(0.1,3.2,7.2,wallP,17,1.6,-10,false,PH);box(8,3.2,0.1,wallP,13,1.6,-13.6,false,PH);box(8,3.2,0.1,wallP,13,1.6,-6.4,false,PH);
+
+const glassM=new THREE.MeshStandardMaterial({color:0x9fb6c8,transparent:true,opacity:.18,roughness:.05});
+box(0.05,2.6,2.6,glassM,9,1.3,-7.7,false,PH);box(0.05,2.6,2.6,glassM,9,1.3,-12.3,false,PH);box(0.05,0.6,7.2,M(0x3a4048),9,2.9,-10,false,PH);
+const pdoor=box(0.05,2.3,1.9,glassM,9,1.15,-10,false,PH);
+// shelves
+const shelfM=M(0xf2f2ee),itemC=[0xe85d5d,0x5d9ee8,0xf2f2f2,0x6ad17a,0xe8c25d];
+[[11.2,-8.2],[11.2,-11.8],[13.4,-8.2],[13.4,-11.8]].forEach(([x,z],k)=>{box(1.6,1.9,0.5,shelfM,x,0.95,z,true,PH);
+ for(let r=0;r<3;r++)for(let j=0;j<5;j++){if(((k*7+r*3+j*5)%4)!=0)continue;box(0.18,0.22,0.16,M(itemC[(k+j+r)%5]),x-0.6+j*0.3,0.55+r*0.55,z+0.18,false,PH)}});
+for(let i=0;i<9;i++){const b=box(0.18,0.14,0.16,M(itemC[i%5]),10+((i*37)%60)/10,0.08,-7.2-((i*53)%55)/10,false,PH);b.rotation.y=i}
+// counter + back door + note
+box(0.6,1.05,4.2,M(0x8a6a4a),15.3,0.52,-10.6,true,PH);box(0.7,0.06,4.3,M(0xd8d2c4),15.3,1.07,-10.6,false,PH);
+const bdr=box(0.08,2.1,0.95,M(0x7a8594,{metalness:.4}),16.94,1.05,-12.6,false,PH);
+const note=box(0.02,0.32,0.26,M(0xf5f1e3),16.89,1.45,-12.6,false,PH);
+const phL=new THREE.PointLight(0xe8eef6,0,12,1.4);phL.position.set(SX+11,2.8,-10);S.add(phL);
+const inh=box(0.06,0.14,0.08,M(0x3a7bd5),0,-.72,0.04,false,KID.arms[1]);inh.visible=false;
+// ---------- E7: door hole, back room, Ana, brother ----------
+PH.children.forEach(c=>{const p=c.position;if(Math.abs(p.x-17)<0.01&&Math.abs(p.z+10)<0.01&&c.geometry.parameters.depth>7)c.visible=false});
+box(0.1,3.2,0.525,wallP,17,1.6,-13.3375,false,PH);box(0.1,3.2,5.725,wallP,17,1.6,-9.2625,false,PH);box(0.1,1.1,0.95,wallP,17,2.65,-12.6,false,PH);
+bdr.visible=false;note.position.x=16.95;
+const dpv=new THREE.Group();dpv.position.set(16.98,0,-13.075);PH.add(dpv);box(0.06,2.1,0.95,M(0x7a8594,{metalness:.4}),0.02,1.05,0.475,false,dpv);
+const dnote=box(0.02,0.32,0.26,M(0xf5f1e3),-0.03,1.45,0.475,false,dpv);const dhandle=box(0.06,0.04,0.14,M(0xc9ced4,{metalness:.8}),-0.06,1.0,0.82,false,dpv);
+const BR=new THREE.Group();st.add(BR);const brW=M(0xb9b2a4),brF=M(0x5a5248);
+box(4,0.06,3.6,brF,19,0.03,-12.4,false,BR);box(4,0.1,3.6,M(0x8f877a),19,3.2,-12.4,false,BR);
+box(0.1,3.2,3.6,brW,21,1.6,-12.4,false,BR);box(4,3.2,0.1,brW,19,1.6,-14.2,false,BR);box(4,3.2,0.1,brW,19,1.6,-10.6,false,BR).visible=false;
+// alley door (east wall)
+const adoor=box(0.08,2.1,0.95,M(0x4a5a4a,{metalness:.3}),20.94,1.05,-13.3,false,BR);box(0.04,0.3,0.5,new THREE.MeshStandardMaterial({color:0xcfe0ff,emissive:0x8aa0c0,emissiveIntensity:.8}),20.9,1.75,-13.3,false,BR);
+box(0.04,0.06,0.2,M(0xc9ced4,{metalness:.8}),20.88,1.0,-12.95,false,BR);
+// table on east wall
+box(0.8,0.06,1.4,M(0x8a6a4a),20.4,0.8,-11.4,true,BR);[[20.1,-10.8],[20.7,-10.8],[20.1,-12.0],[20.7,-12.0]].forEach(([x,z])=>box(0.06,0.8,0.06,M(0x5a4430),x,0.4,z,false,BR));
+const water=[];for(let j=0;j<4;j++)water.push(box(0.09,0.3,0.09,new THREE.MeshStandardMaterial({color:0x6ab0ff,transparent:true,opacity:.8,roughness:.1}),20.25+(j%2)*0.14,0.98,-10.9-Math.floor(j/2)*0.14,false,BR));
+const food=[];for(let j=0;j<3;j++)food.push(box(0.12,0.14,0.12,M([0xd04a2a,0xe8c25d,0x6ad17a][j]),20.55,0.9,-11.0-j*0.16,false,BR));
+const radio2=box(0.32,0.2,0.16,M(0x222428),20.5,0.93,-11.65,false,BR);box(0.02,0.36,0.02,M(0x999999),20.6,1.2,-11.7,false,BR);const radLed=box(0.03,0.03,0.01,new THREE.MeshBasicMaterial({color:0x33ff66}),20.4,0.96,-11.56,false,BR);
+const vkeys=box(0.12,0.03,0.08,M(0xd4af37,{metalness:.9,roughness:.3,emissive:0x3a2a00}),20.2,0.85,-11.95,false,BR);
+// lamp
+const brLamp=box(0.3,0.06,0.3,new THREE.MeshStandardMaterial({color:0xfff0c8,emissive:0xfff0c8,emissiveIntensity:1.2}),19,3.12,-12.4,false,BR);
+const brL=new THREE.PointLight(0xffe2b0,0,9,1.5);brL.position.set(SX+19,2.8,-12.2);S.add(brL);
+// Ana
+const ANA=walker({shirt:0xf4f4f0,pants:0x3a4458,hair:0x8a5a2a,skin:0xd8b090,long:true});
+const bar=box(0.05,0.85,0.05,M(0x8a8f96,{metalness:.8,roughness:.3}),0,-0.6,0.12,true,ANA.arms[1]);bar.rotation.x=1.2;
+// brother lying under a blanket
+const BRO=walker({shirt:0x6a5040,pants:0x2a2d33,hair:0x3a2a1a,skin:0xb89a80});const BH=new THREE.Group();BH.position.set(19.2,0,-13.45);BH.rotation.y=-Math.PI/2;st.add(BH);
+BH.add(BRO.g);BRO.g.rotation.x=-Math.PI/2;BRO.g.position.set(0,0.2,0.85);
+const broEyes=BRO.h.children.filter(c=>c.geometry&&c.geometry.parameters&&c.geometry.parameters.width===.05);
+const yEyes=[-.06,.06].map(x=>{const e=new THREE.Mesh(new THREE.SphereGeometry(.02,6,6),new THREE.MeshBasicMaterial({color:0xe8ff70}));e.position.set(x,.02,.16);e.visible=false;BRO.h.add(e);return e});
+const blanket=box(0.75,0.14,1.35,M(0x5a6a8a),0.05,0.3,0.25,true,BH);
+const bband=box(0.15,0.2,0.15,M(0xf2f2f2),0,-0.32,0,false,BRO.arms[1]);const bblood=box(0.155,0.06,0.155,M(0x8b0000),0,-0.3,0,false,BRO.arms[1]);
+const pillow=box(0.5,0.1,0.35,M(0xdcd6c8),0,0.05,-1.0,false,BH);
+
+// ---------- E8: alley, van, gate ----------
+const AL=new THREE.Group();st.add(AL);const brick=M(0x6a4a3a),brick2=M(0x5a4034);
+box(5.6,0.06,32,M(0x3a3c40),23.8,0.03,-14,false,AL);
+box(0.3,6,8.4,brick,21.15,3,-6.2,false,AL);box(0.3,6,15.6,brick,21.15,3,-22.2,false,AL);box(0.3,2.8,3.6,brick2,21.15,4.6,-12.4,false,AL);
+box(0.3,8,32,brick2,26.75,4,-14,false,AL);
+for(let i=0;i<6;i++)box(0.6,0.9,0.6,M(0x2f5a3a),26.2,0.45,-3-i*4.3,true,AL);
+// gate
+const gate=new THREE.Group();gate.position.set(23.95,0,-29);AL.add(gate);const gm=M(0x8a8f96,{metalness:.7,roughness:.35});
+box(5.4,0.08,0.08,gm,0,2.4,0,true,gate);box(5.4,0.08,0.08,gm,0,0.1,0,true,gate);for(let i=0;i<=18;i++)box(0.035,2.4,0.035,gm,-2.7+i*0.3,1.25,0,true,gate);
+box(0.12,2.6,0.12,gm,-2.7,1.3,0,true,gate);box(0.12,2.6,0.12,gm,2.7,1.3,0,true,gate);box(0.12,2.6,0.12,gm,0,1.3,0,true,gate);
+const chainL=box(0.22,0.28,0.1,M(0xb8a040,{metalness:.8}),0,1.1,0.08,true,gate);
+// van
+const VAN=new THREE.Group();st.add(VAN);const vanM=M(0xe8e8e2);
+box(2.0,1.9,4.6,vanM,0,1.35,0,true,VAN);box(1.96,0.7,0.04,new THREE.MeshStandardMaterial({color:0x1d232b,transparent:true,opacity:.3}),0,1.75,-2.31,false,VAN);
+[-1.01,1.01].forEach(x=>box(0.03,0.6,0.9,M(0x1d232b),x,1.8,-1.6,false,VAN));box(0.03,0.35,1.6,M(0x2a9d8f),1.015,1.2,0.6,false,VAN);
+[[-0.9,-1.5],[0.9,-1.5],[-0.9,1.5],[0.9,1.5]].forEach(([x,z])=>box(0.3,0.6,0.6,M(0x111111),x,0.3,z,false,VAN));
+const hl=[-0.65,0.65].map(x=>box(0.3,0.15,0.04,new THREE.MeshStandardMaterial({color:0xfff6d0,emissive:0xfff6d0,emissiveIntensity:0}),x,0.85,-2.31,false,VAN));
+const vanL=new THREE.SpotLight(0xfff2d0,0,30,0.5,0.5,1.2);S.add(vanL);S.add(vanL.target);
+const alAmb=new THREE.PointLight(0xcfd8e8,0,18,1.2);S.add(alAmb);
+
+// ---------- beyond the gate: cross street ----------
+const BY=new THREE.Group();st.add(BY);
+box(60,0.06,14,M(0x3d4045),24,0.02,-37,false,BY);box(60,0.2,3,M(0x8d8a84),24,0.1,-29.8,false,BY);box(60,0.2,3,M(0x8d8a84),24,0.1,-44.5,false,BY);
+for(let x=-4;x<54;x+=5)box(2.4,0.02,0.22,M(0xe8e2c0),x,0.06,-37,false,BY);
+const bc2=[0x6b5a4a,0x5a6070,0x7a6a5a,0x4a5560,0x6a4a4a,0x55606a];
+for(let i=0;i<8;i++){const h=12+((i*5)%4)*4,x=-4+i*8;box(7.4,h,8,M(bc2[i%6]),x,h/2,-50,false,BY);
+ for(let fy=2;fy<h-1;fy+=2.4)for(let fx=-2.8;fx<=2.8;fx+=1.6)box(1.0,1.2,0.05,new THREE.MeshStandardMaterial({color:0x1d232b,emissive:((i+fy+fx)%5<1)?0x2a2418:0}),x+fx,fy,-45.97,false,BY)}
+[[14,-33,0.1,0x8a2a2a],[30,-41,-0.2,0x2a4a8a],[36,-34,1.5,0xbcbcbc],[8,-41,0.05,0x2a2a2a]].forEach(([x,z,r,c])=>{const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=r+Math.PI/2;BY.add(g);
+ box(1.8,0.7,4.2,M(c),0,0.55,0,true,g);box(1.6,0.6,2.2,M(0x1d232b),0,1.15,-0.2,true,g);[[-.8,1.3],[.8,1.3],[-.8,-1.3],[.8,-1.3]].forEach(([wx,wz])=>box(0.25,0.55,0.55,M(0x111111),wx,0.28,wz,false,g))});
+const pol=new THREE.Group();pol.position.set(22,0,-38.5);pol.rotation.y=0.4;BY.add(pol);box(1.9,0.75,4.4,M(0xf2f2f2),0,0.55,0,true,pol);box(1.95,0.25,1.6,M(0x1a3a8a),0,0.6,0.4,false,pol);box(1.7,0.6,2.2,M(0x1d232b),0,1.18,-0.2,true,pol);
+const pR=box(0.4,0.12,0.2,new THREE.MeshStandardMaterial({color:0xff2020,emissive:0xff2020,emissiveIntensity:0}),-0.3,1.55,-0.2,false,pol);const pB=box(0.4,0.12,0.2,new THREE.MeshStandardMaterial({color:0x2050ff,emissive:0x2050ff,emissiveIntensity:0}),0.3,1.55,-0.2,false,pol);
+const polL=new THREE.PointLight(0xff3030,0,10,1.4);S.add(polL);
+const BZ=[];for(let i=0;i<5;i++){const z=walker({shirt:[0x4a3b3b,0x3b4a3b,0x555555,0x2b2f36,0x6a5a3a][i],pants:0x24262b,skin:0x6d7a5f,hair:0x1a1a1a});z.g.traverse(m=>{m.castShadow=false});
+ [-.06,.06].forEach(x=>{const e=new THREE.Mesh(new THREE.SphereGeometry(.03,6,6),new THREE.MeshBasicMaterial({color:0xfff2c0}));e.position.set(x,.02,.16);z.h.add(e)});BZ.push({p:z,x:SX+10+i*7,z:-36+((i*3)%5)-2,ph:i*1.3})}
+
+// ---------- E9 extras ----------
+const gpiv=new THREE.Group();gpiv.position.set(21.25,0,-29);AL.add(gpiv);AL.remove(gate);gpiv.add(gate);gate.position.set(2.7,0,0);
+const latch=box(0.5,0.2,0.16,M(0xb8a040,{metalness:.8}),0,0.18,0.1,true,gate);
+const tiron=box(0.05,0.7,0.05,M(0x8a8f96,{metalness:.8,roughness:.3}),0,-0.6,0.15,true,SUIT.arms[1]);
+// ---------- E10 extras: parked police car, officer, kit ----------
+BY.children.forEach(c=>{if(c.type==='Group'&&((Math.abs(c.position.x-14)<0.01&&Math.abs(c.position.z+33)<0.01)||(Math.abs(c.position.x-36)<0.01&&Math.abs(c.position.z+34)<0.01)))c.visible=false});pol.visible=false;
+SZ.forEach(z=>z.p.g.visible=false);
+const P2=new THREE.Group();P2.position.set(29,0,-38.8);P2.rotation.y=Math.PI/2;BY.add(P2);
+const pW=M(0xf2f2f2),pBl=M(0x1a3a8a),pDk=M(0x15181d);
+box(1.9,0.72,4.6,pW,0,0.56,0,true,P2);box(1.95,0.22,2.2,pBl,0,0.62,0.1,false,P2);
+box(1.7,0.06,2.2,pW,0,1.5,-0.1,true,P2);
+[[-.82,-1.15],[.82,-1.15],[-.82,.95],[.82,.95],[-.82,-.1],[.82,-.1]].forEach(([x,z])=>box(.07,.6,.07,pW,x,1.2,z,false,P2));
+const gDark=new THREE.MeshStandardMaterial({color:0x101820,transparent:true,opacity:.45,roughness:.05,metalness:.3});
+const gRear=new THREE.MeshStandardMaterial({color:0x0c1218,transparent:true,opacity:.88,roughness:.05,metalness:.3});
+box(1.6,.5,.03,gDark,0,1.2,-1.16,false,P2);box(1.6,.5,.03,gDark,0,1.2,.96,false,P2);
+box(.03,.5,.95,gDark,.86,1.2,-.62,false,P2);box(.03,.5,.95,gRear,.86,1.2,.42,false,P2);const rWin=box(.03,.5,.95,gRear,-.86,1.2,.42,false,P2);
+box(.02,.06,.16,M(0xc9ced4,{metalness:.8}),-.96,.82,.7,false,P2);
+// driver door (local -x, hinge front)
+const dD=new THREE.Group();dD.position.set(-0.96,0,-1.12);P2.add(dD);box(.06,.68,1.0,pW,0,.58,.5,true,dD);box(.065,.2,1.0,pBl,0,.62,.5,false,dD);box(.03,.48,.92,gDark,0,1.18,.5,false,dD);
+// interior
+box(.55,.5,.5,pDk,-.42,.75,-.25,false,P2);box(.55,.5,.5,pDk,.42,.75,-.25,false,P2);box(1.5,.45,.5,pDk,0,.75,.62,false,P2);
+box(1.6,.06,.03,M(0x333333),0,1.42,.15,false,P2);for(let i=0;i<7;i++)box(.02,.5,.02,M(0x333333),-.7+i*.23,1.18,.15,false,P2);
+box(1.6,.22,.35,M(0x22252a),0,.98,-.95,false,P2);
+const swh=new THREE.Mesh(new THREE.TorusGeometry(.15,.025,6,12),M(0x111111));swh.position.set(-.42,1.12,-.72);swh.rotation.x=-0.5;P2.add(swh);
+const pKeys=box(.05,.09,.03,M(0xd4af37,{metalness:.9,roughness:.3,emissive:0x6a5000}),-.18,1.04,-.77,false,P2);
+const pRad=box(.26,.12,.12,M(0x222428),.12,1.06,-.8,false,P2);const pLed=box(.04,.03,.01,new THREE.MeshBasicMaterial({color:0x33ff66}),.05,1.07,-.73,false,P2);
+const pR2=box(.5,.12,.22,new THREE.MeshStandardMaterial({color:0xff2020,emissive:0xff2020}),-.3,1.59,-.2,false,P2);const pB2=box(.5,.12,.22,new THREE.MeshStandardMaterial({color:0x2050ff,emissive:0x2050ff}),.3,1.59,-.2,false,P2);
+[[-.85,-1.5],[.85,-1.5],[-.85,1.5],[.85,1.5]].forEach(([x,z])=>box(.3,.6,.6,M(0x111111),x,.3,z,false,P2));
+// trunk lid
+const tLid=new THREE.Group();tLid.position.set(0,.93,1.15);P2.add(tLid);box(1.85,.05,1.15,pW,0,0,.57,true,tLid);
+const tKit=box(.4,.2,.28,M(0xf4f4f4),0,1.02,1.7,false,P2);box(.02,.1,.03,M(0xd32f2f),0,1.02,1.86,false,P2);
+const p2L=new THREE.PointLight(0xff3030,0,9,1.4);S.add(p2L);
+// officer in back seat
+const OFF=walker({shirt:0x1f2a44,pants:0x1f2a44,hair:0x2a1e16,skin:0xc99d7c});S.remove(OFF.g);P2.add(OFF.g);OFF.g.scale.setScalar(.9);
+box(.37,.08,.37,M(0x1a2236),0,.15,-.01,false,OFF.h);box(.26,.03,.13,M(0x111622),0,.12,.2,false,OFF.h);box(.08,.05,.02,M(0xd4af37,{metalness:.8}),0,.16,.18,false,OFF.h);
+const badge=box(.06,.07,.02,M(0xd4af37,{metalness:.8}),-.11,.14,.135,false,OFF.g.children[0]);
+// kid mask + tank, nurse kit
+const kMask=box(.13,.1,.07,new THREE.MeshStandardMaterial({color:0xdff3ff,transparent:true,opacity:.85}),0,-.05,.18,false,KID.h);
+const kTank=new THREE.Mesh(new THREE.CylinderGeometry(.045,.045,.26,8),M(0x2aa64a));kTank.position.set(0,-.68,.06);KID.arms[1].add(kTank);
+const nKit=box(.34,.18,.24,M(0xf4f4f4),0,-.66,.12,false,NURSE.arms[0]);box(.02,.08,.03,M(0xd32f2f),0,-.66,.25,false,NURSE.arms[0]);
+function walkTo(p,x0,z0,x1,z1,t,ta,tb,endRot){const k=A(t,ta,tb);const x=mix(x0,x1,k),z=mix(z0,z1,k);const moving=k>0&&k<1;
+ const r=moving?Math.atan2(x1-x0,z1-z0):(k>=1&&endRot!==undefined?endRot:Math.atan2(x1-x0,z1-z0));pose(p,SX+16+x,z,moving?t*7:0,moving?0.8:0,r)}
+// ---------- E8: escape road (x=340): alley + gate, street, sidewalk, bridge, checkpoint ----------
+const RXB=340;const rd=new THREE.Group();rd.position.set(RXB,0,0);S.add(rd);
+box(30,0.1,130,M(0x34373c),0,-0.05,-50,false,rd);[-6.5,6.5].forEach(x=>box(5,0.25,124,M(0x85827c),x,0.07,-48,false,rd));
+for(let z=-6;z>-110;z-=6)box(0.25,0.02,2.5,M(0xe8e2c0),0,0.01,z,false,rd);
+for(let i=0;i<13;i++)[-1,1].forEach(sd=>{const h=9+((i*5+(sd>0?2:0))%5)*3;const c=bcols[(i+(sd>0?1:0))%5];const z=-4-i*8;
+ box(8,h,7.6,M(c),sd*13,h/2,z,false,rd);
+ for(let fy=2;fy<h-1;fy+=2.4)for(let fz=-2.8;fz<=2.8;fz+=1.8)box(0.05,1.2,0.9,new THREE.MeshStandardMaterial({color:0x1d232b,emissive:((i+fy+fz)%5<1)?0x6a5028:0x000000}),sd*8.97,fy,z+fz,false,rd)});
+// alley (z 0..+16) with brick walls
+[-1,1].forEach(sd=>box(0.4,7,16,M(0x5a4038),sd*2.4,3.5,8,false,rd));box(5,0.1,16,M(0x2c2e31),0,0.0,8,false,rd);
+// chain gate at z=0 (two leaves hinged at x=+-2.2)
+const gates=[-1,1].map(sd=>{const g=new THREE.Group();g.position.set(sd*2.2,0,0);rd.add(g);const gm=M(0x8a9098,{metalness:.7,roughness:.4});
+ box(0.08,2.2,0.08,gm,-sd*2.15,1.1,0,true,g);box(2.2,0.08,0.08,gm,-sd*1.1,2.15,0,true,g);box(2.2,0.08,0.08,gm,-sd*1.1,0.1,0,true,g);
+ for(let k=1;k<6;k++)box(0.03,2.0,0.03,gm,-sd*k*0.36,1.1,0,true,g);box(2.15,1.95,0.01,new THREE.MeshStandardMaterial({color:0x9aa0a8,transparent:true,opacity:.25}),-sd*1.1,1.1,0,false,g);return g});
+// blocking crashed cars in the road
+[[-0.8,-32,0.9],[1.6,-40,-0.6],[-2.2,-47,0.3],[0.9,-55,1.3],[-1.4,-63,-0.4],[2.0,-70,0.2]].forEach(([x,z,r],i)=>{const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=r;rd.add(g);
+ box(1.8,0.7,4.2,M(carC[i]),0,0.55,0,true,g);box(1.6,0.6,2.2,M(0x1d232b),0,1.15,-0.2,true,g);[[-.8,1.3],[.8,1.3],[-.8,-1.3],[.8,-1.3]].forEach(([wx,wz])=>box(0.25,0.55,0.55,M(0x111111),wx,0.28,wz,false,g))});
+// street lamps (emissive only + a few lights)
+const rdL=[];for(let z=-10;z>-108;z-=16)[-1,1].forEach(sd=>{box(0.12,4.5,0.12,M(0x3a3d42),sd*4.6,2.25,z,false,rd);box(0.7,0.1,0.25,new THREE.MeshStandardMaterial({color:0xffd9a0,emissive:0xffc070,emissiveIntensity:1.5}),sd*4.3,4.45,z,false,rd)});
+for(let z=-14;z>-108;z-=24){const l=new THREE.PointLight(0xffc488,0,16,1.4);l.position.set(RXB,4.2,z);S.add(l);rdL.push(l)}
+// bridge (z -110..-185) over dark water
+const waterP=box(80,0.1,120,new THREE.MeshStandardMaterial({color:0x101c2a,roughness:.15,metalness:.4}),0,-3,-175,false,rd);
+box(11,0.6,78,M(0x50545a),0,-0.3,-148,false,rd);[-1,1].forEach(sd=>{box(0.3,1.0,78,M(0x9aa0a6),sd*5.4,0.5,-148,true,rd);
+ for(let z=-112;z>-186;z-=10){box(0.25,6,0.25,M(0x6a7078),sd*5.4,3,z,false,rd);box(0.4,0.15,0.4,new THREE.MeshStandardMaterial({color:0xfff0d0,emissive:0xfff0d0,emissiveIntensity:1.3}),sd*5.4,6.05,z,false,rd)}});
+for(let z=-116;z>-186;z-=4)box(0.25,0.02,2,M(0xe8e2c0),0,0.01,z,false,rd);
+// checkpoint at z=-172
+const CPZ=-172;[-4.2,-2.6,2.6,4.2].forEach(x=>box(1.4,0.9,0.6,M(0xbab6ae),x,0.45,CPZ,true,rd));
+const bar2=new THREE.Group();bar2.position.set(-1.8,0.95,CPZ+0.6);rd.add(bar2);for(let k=0;k<6;k++)box(0.6,0.12,0.12,M(k%2?0xffffff:0xd02020),0.3+k*0.6,0,0,true,bar2);
+box(2.6,2.4,5,M(0x4a5a3a),-3.6,1.4,CPZ-5,true,rd);box(2.6,1.6,1.8,M(0x3e4c30),-3.6,1.0,CPZ-1.6,true,rd);// army truck
+const tent=box(4,2.4,3.4,M(0x5a6a48),3.8,1.2,CPZ-5,true,rd);
+const flood=[];[-1,1].forEach(sd=>{box(0.2,5,0.2,M(0x333333),sd*5.0,2.5,CPZ-1,false,rd);const f=box(0.9,0.6,0.3,new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xf2f6ff,emissiveIntensity:2.2}),sd*5.0,5.0,CPZ-0.8,false,rd);f.rotation.x=-0.4;
+ const sl=new THREE.SpotLight(0xe8f0ff,0,40,0.55,0.5,1.2);sl.position.set(RXB+sd*5.0,5.0,CPZ-0.6);sl.target.position.set(RXB+sd*1.0,0,CPZ+12);S.add(sl);S.add(sl.target);flood.push(sl)});
+function textTex(lines,bg,fg,w=1024,h=320){const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.fillStyle=bg;x.fillRect(0,0,w,h);x.strokeStyle=fg;x.lineWidth=14;x.strokeRect(10,10,w-20,h-20);x.fillStyle=fg;x.textAlign='center';x.textBaseline='middle';
+ lines.forEach((l,i)=>{x.font=`900 ${l[1]}px Inter, DejaVu Sans, sans-serif`;x.fillText(l[0],w/2,l[2]*h)});const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t}
+const sign=new THREE.Mesh(new THREE.PlaneGeometry(6,1.9),new THREE.MeshBasicMaterial({map:textTex([['SAFE ZONE',170,.42],['STOP · BITE CHECK',70,.8]],'#1d7a3a','#ffffff')}));sign.position.set(0,5.4,CPZ-0.5);rd.add(sign);
+[-3,3].forEach(x=>box(0.18,5.2,0.18,M(0x444444),x,2.6,CPZ-0.6,false,rd));
+const SOL=[];[[-1.2,CPZ+1.6,0],[1.4,CPZ+1.4,-0.2],[3.2,CPZ+0.9,-0.4]].forEach(([x,z,r])=>{const s=walker({shirt:0x4f5d3e,pants:0x46533a,hair:0x2b2b2b,skin:0xc49a78});
+ box(.4,.14,.4,M(0x3f4a32),0,.14,0,true,s.h);const gun=box(0.08,0.08,0.7,M(0x1d1d1d),0,-0.5,0.25,true,s.arms[1]);gun.rotation.x=1.3;SOL.push({p:s,x:RXB+x,z,r})});
+// ---------- E11 extras ----------
+// rear door of the police car (driver side, hinge at front)
+rWin.visible=false;P2.children.forEach(c=>{if(Math.abs(c.position.x+.96)<.01&&Math.abs(c.position.z-.7)<.01)c.visible=false});
+const rD=new THREE.Group();rD.position.set(-0.96,0,-0.05);P2.add(rD);box(.06,.68,.95,pW,0,.58,.475,true,rD);box(.065,.2,.95,pBl,0,.62,.475,false,rD);box(.03,.48,.88,gRear,0,1.18,.475,false,rD);box(.02,.06,.16,M(0xc9ced4,{metalness:.8}),-.04,.82,.75,false,rD);
+// officer #2 (world, for the bridge)
+function officer(){const o=walker({shirt:0x1f2a44,pants:0x1f2a44,hair:0x2a1e16,skin:0xc99d7c});box(.37,.08,.37,M(0x1a2236),0,.15,-.01,false,o.h);box(.26,.03,.13,M(0x111622),0,.12,.2,false,o.h);box(.08,.05,.02,M(0xd4af37,{metalness:.8}),0,.16,.18,false,o.h);box(.06,.07,.02,M(0xd4af37,{metalness:.8}),-.11,.14,.135,false,o.g.children[0]);return o}
+const OFF2=officer();st.remove(VAN);S.add(VAN);
+// sunset sun disc low over the river
+const sunDisc=new THREE.Mesh(new THREE.CircleGeometry(6,24),new THREE.MeshBasicMaterial({color:0xffc070,fog:false}));sunDisc.position.set(RXB-40,9,-240);S.add(sunDisc);
+// E11 speed: keep only needed lights
+{const keep=new Set([sun,skyH,vanL,p2L,...flood]);const rm=[];S.traverse(o=>{if(o.isLight&&!keep.has(o))rm.push(o)});rm.forEach(o=>o.parent.remove(o));[tun,room,vg].forEach(g=>g.visible=false);}
+// ---------- E12: safe zone camp beyond the bridge ----------
+const SZG=new THREE.Group();rd.add(SZG);
+box(90,0.6,60,M(0x4a4a3e),0,-0.3,-217,false,SZG);
+box(16,0.04,14,M(0x6a604c),0,0.02,-196,false,SZG);
+// sandbag walls + back wall
+const sandM=M(0x9a8a62),sandM2=M(0x8a7a55);
+[-1,1].forEach(sd=>{for(let z=-188;z>-226;z-=2)box(1.0,1.3,2.0,(Math.round(z/2))%2?sandM:sandM2,sd*8.2,0.65,z,false,SZG)});
+for(let x=-8;x<=8;x+=2)box(2.0,1.3,1.0,(x/2)%2?sandM:sandM2,x,0.65,-226,false,SZG);
+// distant city silhouettes beyond walls (no void)
+for(let i=0;i<10;i++){const h=10+((i*7)%5)*4;box(9,h,8,M([0x5a5060,0x4a4a58,0x605464][i%3]),-40+i*9,h/2,-250,false,SZG);
+ for(let fy=2;fy<h-1;fy+=2.6)for(let fx=-3;fx<=3;fx+=2)box(1.0,1.2,0.05,new THREE.MeshStandardMaterial({color:0x1d232b,emissive:((i+fy+fx)%4<1)?0x7a5a28:0}),-40+i*9+fx,fy,-245.97,false,SZG)}
+// medical tent with red cross
+const MT=new THREE.Group();MT.position.set(-3.6,0,-197);SZG.add(MT);
+box(4,2.0,4,M(0xeeeeea),0,1.0,0,false,MT);const roof1=box(2.3,0.1,4.1,M(0xe2e2dc),-0.95,2.45,0,false,MT);roof1.rotation.z=0.45;const roof2=box(2.3,0.1,4.1,M(0xe2e2dc),0.95,2.45,0,false,MT);roof2.rotation.z=-0.45;
+box(2.0,0.95,0.1,M(0xd8d8d2),0,2.4,2.0,false,MT);box(2.0,0.95,0.1,M(0xd8d8d2),0,2.4,-2.0,false,MT);
+const rcM=new THREE.MeshStandardMaterial({color:0xd32f2f,emissive:0x5a0000});box(0.9,0.28,0.04,rcM,0,1.3,2.03,false,MT);box(0.28,0.9,0.04,rcM,0,1.3,2.03,false,MT);
+box(0.04,0.28,0.9,rcM,2.03,1.3,0,false,MT);box(0.04,0.9,0.28,rcM,2.03,1.3,0,false,MT);
+box(1.2,1.6,0.05,M(0x3a3a36),0.9,0.8,2.02,false,MT);
+// supply tent + crates
+box(4.5,2.4,3.6,M(0x5a6a48),5.0,1.2,-201,false,SZG);
+const crateM=M(0x8a6a3a),crateM2=M(0x7a5a30);
+[[4.6,-196.2],[5.3,-196.2],[4.95,-196.2,1],[5.9,-197.2]].forEach(([x,z,up],i)=>box(0.65,0.6,0.65,i%2?crateM:crateM2,x,up?0.9:0.3,z,false,SZG));
+box(0.9,0.35,0.6,M(0x2f5a8a),5.0,0.78,-197.3,false,SZG);
+// seats (crates) around a fire barrel
+const BRL=[1.6,-194.6];const barrel=new THREE.Mesh(new THREE.CylinderGeometry(.32,.3,.85,10),M(0x5a3a2a,{metalness:.4}));barrel.position.set(BRL[0],.43,BRL[1]);SZG.add(barrel);
+const fire=new THREE.Mesh(new THREE.ConeGeometry(.26,.45,7),new THREE.MeshBasicMaterial({color:0xffa030}));fire.position.set(BRL[0],1.05,BRL[1]);SZG.add(fire);
+const fire2=new THREE.Mesh(new THREE.ConeGeometry(.15,.3,6),new THREE.MeshBasicMaterial({color:0xfff0a0}));fire2.position.set(BRL[0],1.0,BRL[1]);SZG.add(fire2);
+const SEAT={KID:[0.3,-193.4],ANA:[2.85,-193.9],YOU:[0.1,-195.6],SUIT:[2.6,-195.7],MAN:[-3.6,-199.75]};
+for(const k in SEAT)box(0.5,0.42,0.5,k==='MAN'?crateM2:crateM,SEAT[k][0],0.21,SEAT[k][1],false,SZG);
+// lamp posts (emissive only)
+[[-6.8,-190],[6.8,-190],[-6.8,-206],[6.8,-206]].forEach(([x,z])=>{box(0.12,4,0.12,M(0x3a3d42),x,2,z,false,SZG);box(0.5,0.12,0.5,new THREE.MeshStandardMaterial({color:0xffe0b0,emissive:0xffc070,emissiveIntensity:1.6}),x,4.0,z,false,SZG)});
+const campL=new THREE.PointLight(0xffa050,0,16,1.2);campL.position.set(RXB+BRL[0],1.6,BRL[1]);S.add(campL);
+const fillL=new THREE.PointLight(0xc8d4ff,0,30,1.0);fillL.position.set(RXB+0.5,6,-188);S.add(fillL);
+const manL=new THREE.PointLight(0x9fd08a,0,6,1.5);manL.position.set(RXB-1.8,1.6,-200.6);S.add(manL);
+// medic, man behind the tent, nurse's empty inhaler, medic inhaler
+const MEDIC=walker({shirt:0xf2f2f2,pants:0x3a5a7a,hair:0x2a1e16,skin:0xb08060});box(.04,.16,.02,new THREE.MeshBasicMaterial({color:0xd32f2f}),0,0,.135,false,MEDIC.g.children[0]);box(.16,.04,.02,new THREE.MeshBasicMaterial({color:0xd32f2f}),0,0,.136,false,MEDIC.g.children[0]);
+const mInh=box(0.06,0.14,0.08,M(0x3a7bd5),0,-.68,0.06,false,MEDIC.arms[1]);
+const nInh=box(0.06,0.14,0.08,M(0x3a7bd5),0,-.66,0.06,false,NURSE.arms[1]);
+const offBadge=box(0.09,0.11,0.03,M(0xd4af37,{metalness:.8,roughness:.3,emissive:0x4a3800}),0,-.66,0.08,false,OFF2.arms[0]);
+const MAN=walker({shirt:0x6a5a48,pants:0x2e3036,hair:0x3a2a1a,skin:0xb89a80});
+const manBand=box(0.15,0.2,0.15,M(0xf2f2f2),0,-0.34,0,false,MAN.arms[0]);box(0.155,0.06,0.155,M(0x8b0000),0,-0.32,0,false,MAN.arms[0]);
+const manDots=MAN.h.children.filter(c=>c.geometry&&c.geometry.parameters&&c.geometry.parameters.width===.05);
+const manEyes=[-.06,.06].map(x=>{const e=new THREE.Mesh(new THREE.SphereGeometry(.026,6,6),new THREE.MeshBasicMaterial({color:0xe8ff70}));e.position.set(x,.015,.165);e.visible=false;MAN.h.add(e);return e});
+// ---------- overlay helpers ----------
+function tag(x,y,txt,bg,fg,sc,fs=34){if(sc<=0.01)return '';const w=txt.length*fs*.62+50,h=fs+30;return `<g transform="translate(${x},${y}) scale(${sc})"><rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx="${h/2}" fill="${bg}"/><text x="0" y="${fs*.36}" text-anchor="middle" font-size="${fs}" font-weight="800" fill="${fg}">${txt}</text></g>`}
+function paperTag(x,y,num,txt,sc){if(sc<=0.01)return '';const w=txt.length*30+150;return `<g transform="translate(${x},${y}) scale(${sc}) rotate(-3)"><rect x="${-w/2}" y="-46" width="${w}" height="92" fill="#f1ead8" stroke="#2a2418" stroke-width="3"/><text x="${-w/2+30}" y="18" font-family="DejaVu Serif" font-style="italic" font-size="44" fill="#c62828">${num}.</text><text x="${-w/2+90}" y="16" font-size="46" font-weight="800" fill="#1d1a14">${txt}</text></g>`}
+const RED=/^(dont|shoot|empty|coughed|raised|gun|not|bite|one|problem|hiding|bandaged|arm|eyes|normal)$/i;
+function captions(t){const c=TL.chunks.find(c=>t>=c.s-0.04&&t<c.e+0.1);if(!c)return '';const k=cl((t-c.s+0.04)/0.1);
+ let parts='';c.w.forEach(([w,hl])=>{const col=hl?(RED.test(w.replace(/[^a-z]/gi,''))?'#FF3B30':'#FFD23F'):'#FFFFFF';parts+=`<tspan fill="${col}">${w.toUpperCase().replace(/&/g,'&amp;')} </tspan>`});
+ return `<g transform="translate(540,1430) scale(${.93+.07*k})" opacity="${k}"><text x="0" y="0" text-anchor="middle" font-size="80" font-weight="800" stroke="#000" stroke-width="16" stroke-linejoin="round" paint-order="stroke">${parts}</text></g>`}
+const face=(x0,z0,x1,z1)=>Math.atan2(x1-x0,z1-z0);
+function handsUp(p,k){p.arms.forEach(ar=>{ar.rotation.x=mix(ar.rotation.x,-2.9,k);ar.rotation.z=0})}
+function sit(p,x,z,rot){pose(p,RXB+x,z,0,0,rot);p.g.position.y=-0.43;p.legs.forEach(l=>l.rotation.x=-1.5)}
+function render(t){
+ let o='';const a=[0];for(let i=1;i<=11;i++)a.push(C['a'+i].start);
+ const [_,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11]=a;const E11=END('a11');
+ strips.forEach(s=>s.visible=false);fig.visible=false;
+ ZB.g.visible=false;WK.g.visible=false;eyes.forEach(e=>e.visible=false);ZS.forEach(z=>z.p.g.visible=false);SZ.forEach(z=>z.p.g.visible=false);SUIT.flame.visible=false;DRV.g.visible=false;BRO.g.visible=false;OFF.g.visible=false;ANA.g.visible=true;
+ sun.castShadow=false;st.visible=false;rd.visible=true;BZ.forEach(z=>z.p.g.visible=false);sunDisc.visible=true;
+ const ALL=[NURSE,KID,YOU,ANA,SUIT,OFF2,MEDIC,MAN];
+ ALL.forEach(p=>{p.g.visible=true;p.g.rotation.set(0,0,0);p.h.rotation.set(0,0,0);p.g.children[0].scale.set(1,1,1);p.arms.forEach(ar=>{ar.rotation.set(0,0,0)});p.legs.forEach(l=>l.rotation.set(0,0,0))});
+ bar.visible=false;tiron.visible=false;NURSE.phone.visible=false;nKit.visible=false;inh.visible=false;kMask.visible=false;kTank.visible=false;nInh.visible=false;mInh.visible=false;offBadge.visible=false;
+ manEyes.forEach(e=>e.visible=false);manDots.forEach(d=>d.visible=true);
+ const camp=t>=wT('a6','medic')-0.25;
+ // light
+ const dk=A(t,a1,E11);
+ S.background.setHex(camp?0x9a6a58:0xd88a5a);S.fog.color.setHex(camp?0x8a6050:0xc98060);S.fog.near=25;S.fog.far=110;
+ sun.color.setHex(0xffa060);sun.position.set(RXB-40,12,-240);sun.target.position.set(RXB,0,-160);sun.intensity=camp?0.85:1.2;skyH.intensity=camp?0.75:0.85;R.toneMappingExposure=1.05;
+ flood.forEach(l=>l.intensity=55);campL.intensity=camp?13:0;fillL.intensity=camp?4.5:0;manL.intensity=0;
+ fire.scale.set(1,1+0.15*Math.sin(t*13),1);fire2.scale.set(1,1+0.2*Math.sin(t*17+1),1);campL.intensity*=1+0.08*Math.sin(t*11);
+ VAN.position.set(RXB+3.6,0,CPZ+11.5);VAN.rotation.y=0;hl.forEach(h=>h.material.emissiveIntensity=1.2);vanL.intensity=0;p2L.intensity=0;
+ const LZ=CPZ+5.6;
+ SOL.forEach((s,i)=>{pose(s.p,s.x,s.z,0,0,s.r);s.p.arms[1].rotation.x=-0.9;s.p.arms[0].rotation.x=-0.5});
+ const s0=SOL[0];
+ MEDIC.g.visible=camp;
+ // the man behind the tent, always sitting there
+ sit(MAN,SEAT.MAN[0],SEAT.MAN[1],Math.PI/2);MAN.h.rotation.x=0.45;MAN.arms[0].rotation.x=-0.5;MAN.arms[1].rotation.x=-0.7;MAN.arms[1].rotation.z=0.5;
+ let cp,ct,fov=56;
+ if(!camp){
+  const tBar=wT('a5','barrier');bar2.rotation.z=1.35*A(t,tBar,tBar+1.2);
+  const tTog=a6-0.1;const walkK=A(t,tTog,tTog+3.6);const walking=t>tTog&&t<tTog+3.6;
+  const line=[['YOU',0],['SUIT',0.95],['ANA',1.9],['OFF2',2.85]];const G={YOU,SUIT,ANA,OFF2};
+  const up=1-A(t,wT('a5','lowers'),wT('a5','lowers')+0.8);
+  for(const [k,x] of line){const p=G[k];const z=LZ-walkK*5.2+(k==='OFF2'?0.3*walkK:0);pose(p,RXB+x-0.4*walkK,z,walking?t*7+x:0,walking?0.8:0,Math.PI);if(!walking)handsUp(p,up)}
+  // nurse in front of the kid, holding up the empty inhaler
+  const tAside=wT('a5','checks');const asd=A(t,tAside-0.4,tAside+0.4);
+  pose(NURSE,RXB+mix(-1.2,-0.72,asd)+0.2*walkK,mix(LZ-0.6,LZ-0.15,asd)-walkK*5.4,walking?t*7:0,walking?0.8:0,Math.PI);nInh.visible=true;
+  const tSl=wT('a3','slowly'),tOf=wT('a3','officer');
+  if(!walking){
+   if(t<a3)NURSE.arms[1].rotation.x=-2.5+0.05*Math.sin(t*4);
+   else if(t<tOf){NURSE.arms[1].rotation.x=-1.4+0.25*Math.sin(t*3);NURSE.arms[0].rotation.x=-1.0+0.3*Math.sin(t*2.3+1);NURSE.h.rotation.x=-0.05+0.06*Math.sin(t*5)}
+   else if(t<a5){NURSE.arms[1].rotation.x=-0.9}
+   else{NURSE.arms[0].rotation.x=-0.7*(1-walkK);NURSE.arms[1].rotation.x=-0.5}
+   if(t<a1+0.4)NURSE.arms[1].rotation.x=mix(-1.2,-2.5,A(t,0,0.4));
+  }
+  // kid behind nurse
+  const kidX=-1.45,kidZ=LZ+0.1;pose(KID,RXB+kidX+1.6*walkK,kidZ-walkK*5.4,walking?t*7.5:0,walking?0.8:0,Math.PI);
+  const tA=wT('a5','arms'),tN=wT('a5','neck');
+  if(!walking){
+   const ka=A(t,tA-0.3,tA+0.3)*(1-A(t,tN-0.2,tN+0.3));KID.arms.forEach((ar,i)=>{ar.rotation.x=-1.5*ka;ar.rotation.z=(i?1:-1)*0.15*ka});
+   const kn=A(t,tN-0.2,tN+0.3)*(1-A(t,tN+1.4,tN+2.0));KID.h.rotation.z=0.45*kn;KID.h.rotation.y=0.2*kn;
+   if(t<a3){const cg=Math.max(0,Math.sin(t*6))*0.6;KID.h.rotation.x=0.35*cg;KID.g.children[0].scale.set(1,1-0.05*cg,1)}
+   if(t>=a3&&t<tA-0.3)KID.arms[0].rotation.x=-0.4;
+  }
+  // soldier 0: aims at the nurse; then checks the kid; lowers gun; steps aside
+  const tLo=wT('a5','lowers');const sx=t<tAside?-1.2:mix(-1.2,kidX,A(t,tAside-0.2,tAside+0.6));const sz=t<tAside?LZ-1.75:mix(LZ-1.75,LZ-0.85,A(t,tAside-0.2,tAside+0.6));
+  const aside=A(t,tBar-0.3,tBar+0.8);
+  const sMove=(t>tAside-0.2&&t<tAside+0.6)||(t>tBar-0.3&&t<tBar+0.8);
+  pose(s0.p,RXB+mix(sx,-3.3,aside),mix(sz,LZ-2.4,aside),sMove?t*7:0,sMove?0.7:0,aside>0&&aside<1?-Math.PI/2:0);
+  const aim=1-A(t,tLo,tLo+0.7);s0.p.arms[1].rotation.x=mix(-0.9,-1.6,aim);s0.p.arms[0].rotation.x=mix(-0.5,-1.5,aim);
+  if(t>tOf&&t<a4+1.5)s0.p.h.rotation.y=-0.7*A(t,tOf,tOf+0.5);
+  if(t>tAside+0.6&&t<tLo){s0.p.h.rotation.x=0.35;s0.p.arms[0].rotation.x=-1.3}
+  SOL[1].p.arms[1].rotation.x=mix(-0.9,-1.5,aim);
+  // officer shows the badge
+  const tB=wT('a3','badge');const kb=A(t,tB-0.6,tB)*(1-A(t,a4+0.3,a4+1.0));if(kb>0&&!walking){OFF2.arms[0].rotation.x=mix(-2.9*up,-1.45,kb);offBadge.visible=true;OFF2.arms[1].rotation.x=mix(-2.9*up,-0.2,kb)}
+  // cameras
+  if(t<a2){const k=A(t,0,a2);cp=[RXB+mix(3.6,3.3,k),2.0,LZ-2.7];ct=[RXB-1.2,1.25,LZ-0.9];fov=56}
+  else if(t<a3){const k=A(t,a2,a3);cp=[RXB+mix(-1.2,-0.8,k),mix(3.8,3.4,k),mix(CPZ+12.8,CPZ+11.8,k)];ct=[RXB-0.2,2.0,CPZ-1];fov=58}
+  else if(t<tOf-0.1){const k=A(t,a3,tOf);cp=[RXB+mix(-3.3,-3.0,k),1.8,LZ-3.4];ct=[RXB-1.2,1.3,LZ-0.5];fov=54}
+  else if(t<a4){cp=[RXB+2.9,1.62,LZ-2.3];ct=[RXB+2.55,1.42,LZ];fov=52}
+  else if(t<a5){const k=A(t,a4,a5);cp=[RXB+mix(-1.6,-1.3,k),2.1,LZ-3.8];ct=[RXB+0.4,1.3,LZ];fov=58}
+  else if(t<tBar-0.15){cp=[RXB-3.9,1.5,LZ-0.45];ct=[RXB-1.45,1.2,LZ-0.4];fov=52}
+  else if(t<a6){cp=[RXB+0.2,1.9,CPZ+5.5];ct=[RXB,1.7,CPZ-1];fov=56}
+  else{const k=A(t,a6,a6+3);cp=[RXB+0.4,mix(1.6,1.75,k),CPZ-3.2];ct=[RXB,1.2,LZ-2.5];fov=58}
+ } else {
+  bar2.rotation.z=1.35;
+  SOL[1].p.g.position.set(RXB+6.4,0,-191);SOL[1].p.g.rotation.y=-Math.PI/2;SOL[2].p.g.position.set(RXB-6.5,0,-204);SOL[2].p.g.rotation.y=Math.PI/2;
+  pose(s0.p,RXB-3.3,LZ-2.4,0,0,0);
+  const kx=SEAT.KID[0],kz=SEAT.KID[1];
+  sit(KID,kx,kz,0);KID.arms[0].rotation.x=-0.5;
+  const tMd=wT('a6','medic'),tAna=wT('a6','ana');
+  const br=Math.abs(Math.sin((t-tMd)*1.6));KID.g.children[0].scale.set(1,1+0.04*br,1+0.03*br);
+  // medic gives the inhaler
+  pose(MEDIC,RXB+0.95,-193.35,0,0,-Math.PI/2);mInh.visible=t<a7;MEDIC.arms[1].rotation.x=t<a7?-1.35:-0.2;
+  if(t>=a7){MEDIC.g.position.set(RXB-2.4,0,-195.3);MEDIC.g.rotation.y=Math.PI*0.75}
+  inh.visible=t>=a7;if(t>=a7)KID.arms[1].rotation.x=t>=a10?-2.3:-0.6;
+  if(t>=a10){KID.h.rotation.x=-0.1}
+  // nurse stands next to the kid
+  pose(NURSE,RXB-0.4,-193.75,0,0,Math.PI/2);NURSE.arms[0].rotation.x=-0.6;NURSE.arms[0].rotation.z=0.3;
+  sit(YOU,SEAT.YOU[0],SEAT.YOU[1],face(SEAT.YOU[0],SEAT.YOU[1],BRL[0],BRL[1]));YOU.arms.forEach(ar=>ar.rotation.x=-0.6);
+  sit(SUIT,SEAT.SUIT[0],SEAT.SUIT[1],face(SEAT.SUIT[0],SEAT.SUIT[1],BRL[0],BRL[1]));SUIT.arms.forEach(ar=>ar.rotation.x=-0.6);
+  sit(ANA,SEAT.ANA[0],SEAT.ANA[1],0.5);
+  const cry=t>=tAna-0.2;if(cry){ANA.h.rotation.x=0.5;ANA.arms.forEach((ar,i)=>{ar.rotation.x=-2.55;ar.rotation.z=(i?-1:1)*0.35});ANA.g.children[0].scale.set(1,1+0.02*Math.sin(t*9),1)}
+  pose(OFF2,RXB+3.45,-194.3,0,0,face(3.45,-194.3,SEAT.ANA[0],SEAT.ANA[1]));if(cry)OFF2.arms[1].rotation.x=-1.2;
+  // twist
+  const tE=wT('a9','eyes');
+  if(t>=a9){manL.intensity=2.2;S.background.setHex(0x5a3e3a);S.fog.color.setHex(0x4a3432);sun.intensity=0.5;skyH.intensity=0.5;R.toneMappingExposure=0.95}
+  if(t>=tE-0.1){MAN.h.rotation.x=mix(0.45,-0.05,A(t,tE-0.1,tE+0.5));manEyes.forEach(e=>e.visible=true);manDots.forEach(d=>d.visible=false)}
+  if(t>=a10){manEyes.forEach(e=>e.visible=true);manDots.forEach(d=>d.visible=false);MAN.h.rotation.x=-0.05}
+  // cameras
+  if(t<tAna-0.15){const k=A(t,tMd,tAna);cp=[RXB+0.6,1.6,mix(-190.0,-190.4,k)];ct=[RXB+0.5,0.9,-193.8];fov=56}
+  else if(t<wT('a6','this')-0.15){cp=[RXB+2.4,1.6,-190.6];ct=[RXB+3.0,0.8,-194.0];fov=56}
+  else if(t<a7){const k=A(t,wT('a6','this'),a7);cp=[RXB+mix(1.0,1.3,k),mix(2.4,2.7,k),-188.6];ct=[RXB+1.2,0.7,-194.6];fov=56}
+  else if(t<a8){const k=A(t,a7,a8);const an=mix(-0.35,0.25,k);cp=[RXB+1.2+Math.sin(an)*6.2,2.6,-194.6+Math.cos(an)*6.2];ct=[RXB+1.2,0.8,-194.8];fov=56}
+  else if(t<a9){const k=A(t,a8,a9);cp=[RXB+mix(0.5,0.8,k),mix(5.5,8.0,k),mix(-183.5,-182.5,k)];ct=[RXB,0.8,-200];fov=60}
+  else if(t<wT('a9','bandaged')-0.2){const k=A(t,a9,wT('a9','bandaged'));cp=[RXB+mix(0.8,-0.6,k),1.45,mix(-198.2,-200.0,k)];ct=[RXB-3.6,0.95,-199.9];fov=54}
+  else if(t<tE-0.2){const k=A(t,wT('a9','bandaged'),tE);cp=[RXB+mix(-1.4,-1.7,k),1.25,-199.9];ct=[RXB-3.6,0.95,-199.75];fov=52}
+  else if(t<a10){const k=A(t,tE,a10);cp=[RXB+mix(-2.55,-2.75,k),1.32,-199.75];ct=[RXB-3.6,1.3,-199.75];fov=50}
+  else if(t<a11){cp=[RXB+0.9,1.3,-190.9];ct=[RXB+0.35,0.95,-193.5];fov=54}
+  else{const k=A(t,a11,E11+3);cp=[RXB+mix(1.5,4,k),mix(3.0,16,k),mix(-186,-170,k)];ct=[RXB,0.5,mix(-195,-200,k)];fov=60}
+ }
+ cam.position.set(...cp);cam.lookAt(...ct);cam.fov=fov;cam.updateProjectionMatrix();R.render(S,cam);
+ // ---------- overlays ----------
+ if(t<0.12)o+=`<rect width="1080" height="1920" fill="#000"/>`;
+ if(t<a2+3){o+=`<g transform="translate(540,250) scale(${pop(t,0.2)}) rotate(-3)"><rect x="-430" y="-66" width="860" height="132" rx="16" fill="#E5383B"/><text x="0" y="23" text-anchor="middle" font-size="64" font-weight="800" fill="#fff">ZOMBIES ON THE SUBWAY</text></g>`+tag(540,375,'PART 12 · FINALE','#FFD23F','#111',pop(t,0.4),38)}
+ if(t<a2&&t>0.3)o+=tag(540,480,'✋ DON\'T SHOOT!','#E5383B','#fff',pop(t,0.3),44);
+ if(t>=a2&&t<a3){[['safe','✅ WE REACHED THE SAFE ZONE','#1f9d55','#fff'],['coughed','😷 THE KID COUGHED','#E5383B','#fff'],['truth','🗣️ WE TOLD THE TRUTH','#FFD23F','#111']].forEach(([w,txt,bg,fg],i)=>{const tw=wT('a2',w);if(t>tw-0.1)o+=tag(540,520+i*105,txt,bg,fg,pop(t,tw-0.1),34)})}
+ if(t>=a3&&t<a4){[['not','🫁 NOT A BITE','#FFD23F','#111'],['arms','💪 CHECK HIS ARMS','#fff','#111'],['badge','👮 OFFICER: "HE\'S CLEAN"','#2F7BE5','#fff']].forEach(([w,txt,bg,fg],i)=>{const tw=wT('a3',w);if(t>tw-0.1)o+=tag(540,240+i*100,txt,bg,fg,pop(t,tw-0.1),36)})}
+ if(t>=a4&&t<a5)o+=paperTag(540,250,12,'TELL THE TRUTH',pop(t,a4+0.2));
+ if(t>=a5&&t<a6){[['arms','✅ ARMS: CLEAN','#1f9d55','#fff'],['neck','✅ NECK: CLEAN','#1f9d55','#fff'],['lowers','🔫 GUN DOWN','#fff','#111'],['barrier','🚧 BARRIER UP','#FFD23F','#111']].forEach(([w,txt,bg,fg],i)=>{const tw=wT('a5',w);if(t>tw-0.1)o+=tag(540,240+i*100,txt,bg,fg,pop(t,tw-0.1),38)})}
+ if(t>=a6&&t<a7){[['inhaler','💙 NEW INHALER','#2F7BE5','#fff'],['breathe','🫁 HE CAN BREATHE','#1f9d55','#fff']].forEach(([w,txt,bg,fg],i)=>{const tw=wT('a6',w);if(t>tw-0.1&&t<wT('a6','ana')-0.2)o+=tag(540,240+i*100,txt,bg,fg,pop(t,tw-0.1),38)});
+   if(t>wT('a6','strangers')-0.1)o+=tag(540,260,'🚇 THIS MORNING: STRANGERS ON A TRAIN','#fff','#111',pop(t,wT('a6','strangers')-0.1),32)}
+ if(t>=a7&&t<a8){[['twelve',0,'','12 RULES GOT US HERE'],['hands',7,'LOOK AT THEIR HANDS'],['time',9,'BUY TIME'],['back',10,'CHECK THE BACK SEAT'],['truth',12,'TELL THE TRUTH']].forEach(([w,n,txt,h],i)=>{const tw=wT('a7',w);if(t>tw-0.15){if(i==0)o+=tag(540,200,'📜 12 RULES GOT US HERE','#FFD23F','#111',pop(t,tw-0.15),38);else o+=paperTag(540,220+i*112,n,txt,pop(t,tw-0.15)*0.82)}})}
+ if(t>=a8&&t<a9){o+=tag(540,230,'ON PAPER:','#fff','#111',pop(t,wT('a8','paper')));[['walls','🧱 WALLS'],['food','🥫 FOOD'],['soldiers','🪖 SOLDIERS']].forEach(([w,txt],i)=>{const tw=wT('a8',w);if(t>tw-0.1)o+=tag(540,335+i*100,'✅ '+txt,'#1f9d55','#fff',pop(t,tw-0.1),36)});if(t>wT('a8','one')-0.1)o+=tag(540,660,'⚠️ ONE PROBLEM…','#E5383B','#fff',pop(t,wT('a8','one')-0.1),42)}
+ if(t>=a9&&t<a10){[['bandaged','🩹 A BANDAGED ARM','#fff','#111'],['eyes','👁️ HIS EYES','#E5383B','#fff']].forEach(([w,txt,bg,fg],i)=>{const tw=wT('a9',w);if(t>tw-0.1)o+=tag(540,250+i*105,txt,bg,fg,pop(t,tw-0.1),38)})}
+ if(t>=a10&&t<a11){o+=tag(540,200,'REAL FACT','#fff','#111',pop(t,a10+.1),32);if(t>wT('a10','reliever')-0.2)o+=tag(540,305,'💙 A RELIEVER INHALER WORKS IN MINUTES','#FFD23F','#111',pop(t,wT('a10','reliever')-0.2),30)}
+ if(t>=a11&&t<E11+0.1){o+=tag(540,230,'THE END OF SEASON 1','#E5383B','#fff',pop(t,a11+.1),46);
+   const tw=wT('a11','where');if(t>tw-0.1){o+=`<rect width="1080" height="1920" fill="#000" opacity="${.45*A(t,tw-0.1,tw+0.3)}"/>`;o+=tag(540,420,'SEASON 2: WHERE?','#FFD23F','#111',pop(t,tw-0.1),52);
+    [['hospital','🏥 HOSPITAL','#2F7BE5'],['mall','🏬 MALL','#1f9d55'],['airport','✈️ AIRPORT','#E58A2F']].forEach(([w,txt,c],i)=>{const t2=wT('a11',w);if(t>t2-0.1)o+=tag(540,600+i*150,txt,c,'#fff',pop(t,t2-0.1),56)});
+    const tc=wT('a11','tell');if(t>tc-0.1)o+=tag(540,1620,'💬 TELL ME IN THE COMMENTS','#fff','#111',pop(t,tc-0.1)*(1+.03*Math.sin(t*6)),46)}}
+ if(t>E11+0.1){const k=A(t,E11+0.1,E11+0.6);o+=`<g opacity="${k}"><rect width="1080" height="1920" fill="#06070a"/><text x="540" y="780" text-anchor="middle" font-family="DejaVu Serif" font-style="italic" font-size="50" fill="#aab">survive where you are</text><text x="540" y="900" text-anchor="middle" font-size="104" font-weight="800" fill="#fff">SEASON 2</text><text x="540" y="990" text-anchor="middle" font-size="48" font-weight="800" fill="#FFD23F">coming soon</text><text x="540" y="1090" text-anchor="middle" font-size="40" font-weight="700" fill="#E5383B">the safe zone isn't as safe as it looks</text><text x="540" y="1180" text-anchor="middle" font-size="36" font-weight="600" fill="#889">follow to survive</text></g>`}
+ o+=`<defs><radialGradient id="vg" cx=".5" cy=".45" r=".75"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".7"/></radialGradient></defs><rect width="1080" height="1920" fill="url(#vg)"/>`;
+ if(t<E11)o+=captions(t);
+ document.getElementById('ov').innerHTML=o;}
+window.render=render;window.done=true;
+</script></body></html>
