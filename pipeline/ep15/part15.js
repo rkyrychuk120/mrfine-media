@@ -1,0 +1,466 @@
+// ---------- ep15: car stuck on the train tracks — rural crossing, side view ----------
+const HERO={skin:'#D9A07A',hair:'#2B2420',top:'#E0693A',pants:'#2F3A55',shoe:'#F4F1EC',hairStyle:'short'};
+const RAIL=470, FRAIL=452, GY=300, CARX=540, CARY=482, IMPX=662;
+const ease=k=>{k=clamp(k);return k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2};
+const E=(t,a,b)=>ease((t-a)/(b-a));
+const lerp2=(p,q,k)=>[mix(p[0],q[0],k),mix(p[1],q[1],k)];
+function kpath(t,K){ if(t<=K[0][0]) return K[0][1]; for(let i=0;i<K.length-1;i++){ if(t<=K[i+1][0]) return lerp2(K[i][1],K[i+1][1],E(t,K[i][0],K[i+1][0])); } return K[K.length-1][1]; }
+function kval(t,K){ if(t<=K[0][0]) return K[0][1]; for(let i=0;i<K.length-1;i++){ if(t<=K[i+1][0]) return mix(K[i][1],K[i+1][1],E(t,K[i][0],K[i+1][0])); } return K[K.length-1][1]; }
+const depthS=y=>0.5+(y-488)/152*0.32;
+// key times
+const IMP1=()=>P_('n2.2')+0.05;            // bad path impact on "Bad"
+const IMP2=()=>P_('n4.3')-0.1;             // right move impact on "The pieces fly behind you"
+const OUT1=()=>P_('n2.1')+0.02;            // bad path: door opens on "Then you run"
+const OUT2=()=>P_('n4.0')+1.9;             // right move: door opens on "Get out"
+const V0=()=>(2500-IMPX)/IMP1();
+function trainX1(t){ const I=IMP1(), v=V0(); if(t<I) return IMPX+v*(I-t); const d=t-I; return IMPX-(v*0.8*d-12*d*d); }
+function trainX2(t){ const I=IMP2(), v=V0(); if(t<I) return IMPX+v*(I-t); const d=Math.min(t-I,5); return IMPX-(v*0.8*d-9*d*d); }
+function carAfter(dt){ dt=Math.max(0,dt); const push=270*(1-Math.exp(-dt/0.55));
+  const rot=-92*(1-Math.exp(-dt/0.38)); const lift=dt<0.9?Math.sin(dt/0.9*Math.PI)*70:0;
+  return {x:CARX-push,y:CARY-lift+8*clamp(dt/0.9),rot,crush:clamp(dt/0.12)}; }
+
+// ---------- background ----------
+function cloud(x,y,s){ return `<g transform="translate(${x},${y}) scale(${s})" opacity=".92"><ellipse cx="0" cy="0" rx="70" ry="26" fill="#FFF6EC"/><ellipse cx="-34" cy="-14" rx="34" ry="24" fill="#FFF6EC"/><ellipse cx="22" cy="-22" rx="40" ry="30" fill="#FFF6EC"/><ellipse cx="0" cy="8" rx="80" ry="14" fill="#F3DCD0"/></g>`; }
+function tree(x,y,s,c){ return `<g transform="translate(${x},${y}) scale(${s})"><path d="M-6,0 L-5,-60 L5,-60 L6,0Z" fill="#6A4A34"/><circle cx="0" cy="-78" r="34" fill="${c}"/><circle cx="-22" cy="-62" r="22" fill="${c}"/><circle cx="24" cy="-60" r="24" fill="${c}"/><circle cx="-8" cy="-92" r="20" fill="#fff" opacity=".12"/></g>`; }
+function pole(x,y){ return `<path d="M${x},${y} L${x},${y-232}" stroke="#6E5440" stroke-width="10"/><path d="M${x-34},${y-214} L${x+34},${y-214}" stroke="#6E5440" stroke-width="8"/><circle cx="${x-26}" cy="${y-220}" r="4" fill="#A9C7D6"/><circle cx="${x+26}" cy="${y-220}" r="4" fill="#A9C7D6"/>`; }
+let BGC=null;
+function bgStatic(){ if(BGC) return BGC; let s='';
+  // far hills
+  let p=`M-3200,${GY}`; for(let x=-3200;x<=6000;x+=80) p+=` L${x},${GY-60-Math.sin(x*0.0021)*40-Math.sin(x*0.0057+1)*18}`; p+=` L6000,${GY+20} L-3200,${GY+20}Z`;
+  s+=`<path d="${p}" fill="#B7A6C9"/>`;
+  // water tower on the far hill
+  s+=`<g transform="translate(-380,${GY-70})"><path d="M-30,0 L-18,-90 M30,0 L18,-90 M-24,-40 L24,-40" stroke="#8E86A0" stroke-width="5"/><rect x="-40" y="-130" width="80" height="44" rx="10" fill="#9C94AE"/><path d="M-40,-130 Q0,-160 40,-130Z" fill="#8E86A0"/><text x="0" y="-102" text-anchor="middle" font-size="16" font-weight="800" fill="#E8E2F0">MAPLE</text></g>`;
+  let p2=`M-3200,${GY+10}`; for(let x=-3200;x<=6000;x+=60) p2+=` L${x},${GY-22-Math.sin(x*0.0034+2)*22-Math.sin(x*0.011)*6}`; p2+=` L6000,${GY+30} L-3200,${GY+30}Z`;
+  s+=`<path d="${p2}" fill="#8FA76E"/>`;
+  // fields (stripes) between hills and track
+  s+=`<rect x="-3200" y="${GY}" width="9200" height="${FRAIL-14-GY}" fill="#C9B46C"/>`;
+  for(let i=0;i<9;i++){ const y=GY+6+i*i*1.9; s+=`<path d="M-3200,${y} L6000,${y}" stroke="#B9A35C" stroke-width="${2+i*0.5}"/>`; }
+  // barn + silo
+  s+=`<g transform="translate(1260,${GY+40})"><rect x="-70" y="-80" width="140" height="80" fill="#B4473A"/><path d="M-82,-78 L0,-132 L82,-78Z" fill="#8E3A30"/><rect x="-22" y="-52" width="44" height="52" fill="#F4EDE0"/><path d="M-22,-52 L22,0 M22,-52 L-22,0" stroke="#B4473A" stroke-width="4"/><rect x="90" y="-150" width="56" height="150" rx="6" fill="#C9CDD3"/><path d="M90,-150 Q118,-186 146,-150Z" fill="#A9AEB6"/><path d="M90,-110 L146,-110 M90,-70 L146,-70" stroke="#A9AEB6" stroke-width="3"/></g>`;
+  // hay bales
+  for(let i=0;i<6;i++){ const x=-1600+i*560+(i%2)*120, y=GY+30+(i%3)*12; s+=`<g transform="translate(${x},${y})"><ellipse cx="0" cy="0" rx="26" ry="20" fill="#E3C873"/><ellipse cx="14" cy="0" rx="12" ry="18" fill="#D2B65E"/><path d="M-10,-8 q8,8 0,16" stroke="#C4A650" stroke-width="3" fill="none"/></g>`; }
+  // trees along the field edge
+  const tc=['#D9762E','#E8B23C','#C25E25','#9DB24E','#D9762E'];
+  for(let i=0;i<22;i++){ const x=-2400+i*330+((i*137)%120); if(x>380&&x<720) continue; s+=tree(x,FRAIL-18-(i%2)*6,0.8+((i*7)%5)*0.08,tc[i%5]); }
+  // ballast + ties + rails
+  s+=`<rect x="-3200" y="${FRAIL-16}" width="9200" height="${RAIL+26-FRAIL+16}" fill="#8F8781"/>`;
+  for(let i=0;i<500;i++){ const x=-3200+((i*977)%9200), y=FRAIL-12+((i*131)%44); s+=`<circle cx="${x}" cy="${y}" r="${2+(i%3)}" fill="${i%2?'#A39B95':'#776F6A'}"/>`; }
+  for(let x=-3200;x<6000;x+=34) s+=`<path d="M${x},${FRAIL-5} L${x+14},${FRAIL-5} L${x+22},${RAIL+12} L${x+6},${RAIL+12}Z" fill="#6B4E3A"/>`;
+  s+=`<path d="M-3200,${FRAIL} L6000,${FRAIL}" stroke="#5E5A62" stroke-width="7"/><path d="M-3200,${FRAIL-3} L6000,${FRAIL-3}" stroke="#C2BFC6" stroke-width="2"/>`;
+  s+=`<path d="M-3200,${RAIL} L6000,${RAIL}" stroke="#5E5A62" stroke-width="9"/><path d="M-3200,${RAIL-4} L6000,${RAIL-4}" stroke="#D2CFD6" stroke-width="3"/>`;
+  // road (perspective) and crossing panels
+  const rl=y=>mix(492,186,(y-GY)/(1000-GY)), rr=y=>mix(588,894,(y-GY)/(1000-GY));
+  s+=`<path d="M${rl(GY)},${GY} L${rr(GY)},${GY} L${rr(FRAIL-16)},${FRAIL-16} L${rl(FRAIL-16)},${FRAIL-16}Z" fill="#6A676E"/>`;
+  s+=`<path d="M${rl(FRAIL-16)},${FRAIL-16} L${rr(FRAIL-16)},${FRAIL-16} L${rr(RAIL+26)},${RAIL+26} L${rl(RAIL+26)},${RAIL+26}Z" fill="#7E7A80"/>`;
+  s+=`<path d="M${rl(FRAIL)},${FRAIL} L${rr(FRAIL)},${FRAIL} M${rl(RAIL)},${RAIL} L${rr(RAIL)},${RAIL}" stroke="#4A474E" stroke-width="7"/>`;
+  // foreground grass
+  s+=`<rect x="-3200" y="${RAIL+26}" width="9200" height="900" fill="#93A85E"/>`;
+  s+=`<rect x="-3200" y="${RAIL+26}" width="9200" height="10" fill="#7E9450"/>`;
+  s+=`<path d="M${rl(RAIL+26)},${RAIL+26} L${rr(RAIL+26)},${RAIL+26} L${rr(1300)},1300 L${rl(1300)},1300Z" fill="#6A676E"/>`;
+  s+=`<path d="M${rl(RAIL+26)+6},${RAIL+26} L${rl(1300)+14},1300 M${rr(RAIL+26)-6},${RAIL+26} L${rr(1300)-14},1300" stroke="#E9E4D8" stroke-width="5"/>`;
+  for(let i=0;i<7;i++){ const y0=RAIL+40+i*i*11, y1=y0+8+i*4; s+=`<path d="M${(rl(y0)+rr(y0))/2},${y0} L${(rl(y1)+rr(y1))/2},${y1}" stroke="#F2C744" stroke-width="${4+i*1.4}"/>`; }
+  s+=`<path d="M${rl(GY)+40},${GY} L${(rl(FRAIL-16)+rr(FRAIL-16))/2},${FRAIL-16}" stroke="#F2C744" stroke-width="3" stroke-dasharray="10 12" opacity=".8"/>`;
+  // grass tufts + stones + flowers
+  for(let i=0;i<70;i++){ const x=-2200+((i*613)%5400), y=RAIL+40+((i*89)%300); if(x>rl(y)-10&&x<rr(y)+10) continue; const sc=0.6+(y-RAIL)/300;
+    s+=`<path d="M${x-8*sc},${y} q${4*sc},${-16*sc} ${6*sc},${-22*sc} M${x},${y} q0,${-18*sc} ${2*sc},${-26*sc} M${x+8*sc},${y} q${-4*sc},${-14*sc} ${-4*sc},${-20*sc}" stroke="#6F8A44" stroke-width="${3*sc}" fill="none" stroke-linecap="round"/>`;
+    if(i%5==0) s+=`<circle cx="${x+10*sc}" cy="${y-14*sc}" r="${4*sc}" fill="${i%2?'#F2D04A':'#F4F1EC'}"/>`;
+    if(i%7==0) s+=`<ellipse cx="${x-14}" cy="${y+4}" rx="${9*sc}" ry="${5*sc}" fill="#A7A39C"/>`; }
+  // power poles behind the track (wires drawn per frame for sway)
+  for(let x=-2000;x<5000;x+=360) s+=pole(x,FRAIL-18);
+  BGC=s; return s; }
+function bgScene(o={}){ let s='';
+  s+=`<rect x="-3200" y="-1600" width="9200" height="${GY+1600}" fill="url(#sky15)"/>`;
+  s+=`<circle cx="1580" cy="150" r="150" fill="#FFD9A0" opacity=".28"/><circle cx="1580" cy="150" r="64" fill="#FFEBC2"/>`;
+  for(let i=0;i<10;i++){ const cx=-2200+i*720+((T*10+i*80)%720), cy=-60+(i%3)*70; s+=cloud(cx,cy,0.8+(i%3)*0.3); }
+  s+=bgStatic();
+  // wires with gentle sway
+  for(let x=-2000;x<4640;x+=360){ const sag=26+Math.sin(T*1.3+x*0.01)*2; s+=`<path d="M${x-26},${FRAIL-238} Q${x+180},${FRAIL-238+sag} ${x+334},${FRAIL-238} M${x+26},${FRAIL-238} Q${x+206},${FRAIL-238+sag} ${x+386},${FRAIL-238}" stroke="#4A4048" stroke-width="2.5" fill="none"/>`; }
+  // birds
+  for(let i=0;i<4;i++){ const bx=-300+((T*40+i*260)%1600), by=60+i*24+Math.sin(T*2+i)*8, f=Math.sin(T*9+i)*6; s+=`<path d="M${bx-10},${by-f} Q${bx-4},${by-4} ${bx},${by} Q${bx+4},${by-4} ${bx+10},${by-f}" stroke="#4A4048" stroke-width="3" fill="none" stroke-linecap="round"/>`; }
+  return s; }
+// crossing signal; on = flashing
+function signal(x,base,sc,on,o={}){ const a=Math.floor(T*2.4)%2; let s='';
+  const L=(cx,lit)=>`<circle cx="${cx}" cy="-150" r="20" fill="#1E1C22"/><circle cx="${cx}" cy="-150" r="14" fill="${lit?'#FF3B30':'#5A1E1E'}"/>${lit?`<circle cx="${cx}" cy="-150" r="44" fill="#FF3B30" opacity=".22"/>`:''}`;
+  s+=`<rect x="-7" y="-280" width="14" height="280" fill="#C9CDD3" stroke="${OL}" stroke-width="3"/><rect x="-26" y="-8" width="52" height="12" rx="3" fill="#8E9299"/>`;
+  s+=`<g transform="translate(0,-250)"><g transform="rotate(35)"><rect x="-60" y="-9" width="120" height="18" fill="#fff" stroke="${OL}" stroke-width="3"/><text x="0" y="6" text-anchor="middle" font-size="13" font-weight="800" fill="#2a2018">RAILROAD</text></g><g transform="rotate(-35)"><rect x="-60" y="-9" width="120" height="18" fill="#fff" stroke="${OL}" stroke-width="3"/><text x="0" y="6" text-anchor="middle" font-size="13" font-weight="800" fill="#2a2018">CROSSING</text></g></g>`;
+  s+=`<rect x="-58" y="-154" width="116" height="8" fill="#1E1C22"/>`+L(-44,on&&a==0)+L(44,on&&a==1);
+  s+=`<path d="M-14,-196 Q0,-216 14,-196Z" fill="#1E1C22"/>`;
+  if(o.ens) s+=`<g transform="translate(0,-92)"><rect x="-48" y="-26" width="96" height="52" rx="5" fill="#1F5FBF" stroke="#fff" stroke-width="3"/><text x="0" y="-10" text-anchor="middle" font-size="9.5" font-weight="800" fill="#fff">EMERGENCY? CALL</text><text x="0" y="5" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">1-800-000-0000</text><text x="0" y="19" text-anchor="middle" font-size="9" font-weight="800" fill="#fff">CROSSING 812 345A</text></g>`;
+  if(o.gate){ const gl=o.gate; s+=`<rect x="-20" y="-66" width="40" height="30" rx="6" fill="#8E9299" stroke="${OL}" stroke-width="3"/><g transform="translate(14,-52)"><rect x="0" y="-7" width="${gl}" height="14" fill="#fff" stroke="${OL}" stroke-width="3"/>`;
+    for(let k=20;k<gl;k+=44) s+=`<rect x="${k}" y="-7" width="22" height="14" fill="#E5383B"/>`;
+    s+=`<circle cx="${gl*0.45}" cy="-12" r="6" fill="${on&&a==0?'#FF3B30':'#5A1E1E'}"/><circle cx="${gl-10}" cy="-12" r="6" fill="${on&&a==1?'#FF3B30':'#5A1E1E'}"/></g>`; }
+  return g(`translate(${x},${base}) scale(${sc})`,s); }
+
+// ---------- car (rear view) ----------
+function carRear(x,y,o={}){ const k=o.door||0, cr=o.crush||0; let s='';
+  const C='#2F8FB0', CD='#22708C';
+  s+=`<rect x="-114" y="-34" width="46" height="38" rx="10" fill="#1E1C22"/>`;
+  if(!o.noWheelR) s+=`<rect x="68" y="-34" width="46" height="38" rx="10" fill="#1E1C22"/>`;
+  if(k>0) s+=`<path d="M-120,-40 L${-120-74*k},${-34-4*k} L${-120-74*k},${-116-8*k} L-118,-158 Z" fill="${CD}" stroke="${OL}" stroke-width="5" stroke-linejoin="round"/><path d="M${-120-64*k},-118 L-124,-150" stroke="#9FD3E6" stroke-width="9" opacity=".75"/>`;
+  s+=`<path d="M-126,-36 L126,-36 L130,-100 Q130,-114 116,-116 L-116,-116 Q-130,-114 -130,-100 Z" fill="${C}" stroke="${OL}" stroke-width="5" stroke-linejoin="round"/>`;
+  s+=`<path d="M-102,-114 L-84,-172 Q-80,-182 -68,-182 L68,-182 Q80,-182 84,-172 L102,-114 Z" fill="${C}" stroke="${OL}" stroke-width="5" stroke-linejoin="round"/>`;
+  s+=`<clipPath id="rw${o.id||0}"><path d="M-80,-120 L-66,-168 L66,-168 L80,-120 Z"/></clipPath>`;
+  s+=`<path d="M-80,-120 L-66,-168 L66,-168 L80,-120 Z" fill="#A9D8EA" stroke="${OL}" stroke-width="4"/>`;
+  if(o.head){ const hx=o.hx||0, hy=o.hy||0; s+=`<g clip-path="url(#rw${o.id||0})"><rect x="-56" y="-150" width="40" height="34" rx="8" fill="#5B5662"/><g transform="translate(${-36+hx},${-128+hy})"><circle cx="-24" cy="2" r="7" fill="${HERO.skin}" stroke="${OL}" stroke-width="3"/><circle cx="24" cy="2" r="7" fill="${HERO.skin}" stroke="${OL}" stroke-width="3"/><circle r="25" fill="${HERO.hair}" stroke="${OL}" stroke-width="3.5"/><path d="M-10,-14 q10,-6 20,0" stroke="#4A403A" stroke-width="4" fill="none"/></g><rect x="14" y="-148" width="40" height="32" rx="8" fill="#5B5662"/></g>`; }
+  s+=`<path d="M-50,-166 L-70,-122 M-30,-166 L-46,-128" stroke="#fff" stroke-width="5" opacity=".55"/>`;
+  if(cr>0) s+=`<path d="M40,-160 L20,-140 L46,-132 L18,-122 M40,-160 L62,-138" stroke="#fff" stroke-width="3" opacity="${cr}" fill="none"/>`;
+  const tl=o.brake?'#FF5A4E':'#C8322B';
+  s+=`<rect x="-124" y="-104" width="34" height="26" rx="6" fill="${tl}" stroke="${OL}" stroke-width="3.5"/>`;
+  if(!o.noTailR) s+=`<rect x="90" y="-104" width="34" height="26" rx="6" fill="${tl}" stroke="${OL}" stroke-width="3.5"/>`;
+  if(o.hazard&&Math.floor(T*2.5)%2==0) s+=`<rect x="-124" y="-104" width="34" height="10" rx="4" fill="#FFB12A"/><rect x="90" y="-104" width="34" height="10" rx="4" fill="#FFB12A"/>`;
+  if(!o.noPlate) s+=`<rect x="-36" y="-80" width="72" height="28" rx="4" fill="#F4F1EC" stroke="${OL}" stroke-width="3"/><text x="0" y="-60" text-anchor="middle" font-size="18" font-weight="800" fill="#2a2018">OOPS</text>`;
+  if(!o.noBumper) s+=`<rect x="-132" y="-48" width="264" height="16" rx="7" fill="#3A3640" stroke="${OL}" stroke-width="4"/>`;
+  if(cr>0) s+=`<path d="M126,-36 L104,-56 L126,-74 L100,-92 L124,-112 L96,-136 L102,-114" fill="${CD}" stroke="${OL}" stroke-width="4" stroke-linejoin="round" opacity="${cr}"/>`;
+  if(o.exhaust){ for(let i=0;i<3;i++){ const p=((T*1.6+i/3)%1); s+=`<circle cx="${90+p*30}" cy="${-30+p*-10}" r="${6+p*14}" fill="#B9B6BC" opacity="${0.5*(1-p)}"/>`; } }
+  if(o.smoke){ for(let i=0;i<5;i++){ const p=((T*0.5+i/5)%1); s+=`<circle cx="${Math.sin(i*2+T)*20}" cy="${-120-p*160}" r="${16+p*40}" fill="#5E5A62" opacity="${0.35*(1-p)*o.smoke}"/>`; } }
+  const sh=o.shake||0;
+  return g(`translate(${x+sh},${y}) rotate(${o.rot||0}) scale(${(1-cr*0.18)*(o.sc||1)},${o.sc||1})`,s); }
+
+// ---------- train (side view, facing left) ----------
+function wheelSet(x,y,n,dist){ let s=''; for(let i=0;i<n;i++){ const cx=x+i*40; s+=`<circle cx="${cx}" cy="${y}" r="17" fill="#2E2B33" stroke="${OL}" stroke-width="3"/><g transform="rotate(${-dist*3.4},${cx},${y})"><path d="M${cx-11},${y} L${cx+11},${y} M${cx},${y-11} L${cx},${y+11}" stroke="#77727E" stroke-width="4"/></g><circle cx="${cx}" cy="${y}" r="5" fill="#9A96A0"/>`; } return s; }
+function sparks(x,y,k){ if(k<=0) return ''; let s=''; for(let i=0;i<4;i++){ const a=Math.PI*(1.05+((Math.sin(T*97+i*13+x)+1)/2)*0.4), l=10+((Math.sin(T*131+i*7+x)+1)/2)*24; s+=`<path d="M${x},${y} L${x+Math.cos(a)*l*-1+18},${y+Math.sin(a)*l}" stroke="${i%2?'#FFD36A':'#FF8A2A'}" stroke-width="3" stroke-linecap="round" opacity="${k}"/>`; } return s; }
+function loco(fx,dist,o){ const B=RAIL; let s='';
+  if(o.beam) s+=`<path d="M${fx+16},${B-128} L${fx-620},${B-260} L${fx-620},${B+10}Z" fill="url(#beam)" opacity="${o.beam}"/>`;
+  s+=`<rect x="${fx+70}" y="${B-46}" width="150" height="20" rx="4" fill="#3A3640" stroke="${OL}" stroke-width="3"/><rect x="${fx+320}" y="${B-46}" width="150" height="20" rx="4" fill="#3A3640" stroke="${OL}" stroke-width="3"/>`;
+  s+=wheelSet(fx+105,B-16,3,dist)+wheelSet(fx+355,B-16,3,dist);
+  s+=`<rect x="${fx+226}" y="${B-62}" width="90" height="30" rx="12" fill="#2E2B33" stroke="${OL}" stroke-width="3"/>`;
+  s+=`<rect x="${fx+20}" y="${B-72}" width="510" height="18" fill="#2E2B33" stroke="${OL}" stroke-width="4"/>`;
+  s+=`<path d="M${fx-8},${B-8} L${fx+44},${B-8} L${fx+44},${B-74} L${fx+16},${B-74}Z" fill="#E5383B" stroke="${OL}" stroke-width="4" stroke-linejoin="round"/>`;
+  s+=`<path d="M${fx-2},${B-30} L${fx+40},${B-30} M${fx+4},${B-50} L${fx+42},${B-50}" stroke="#FFF" stroke-width="5"/>`;
+  // long hood
+  s+=`<rect x="${fx+150}" y="${B-206}" width="372" height="136" rx="8" fill="#F2B230" stroke="${OL}" stroke-width="5"/>`;
+  s+=`<rect x="${fx+150}" y="${B-118}" width="372" height="18" fill="#C8352E"/>`;
+  for(let k=0;k<10;k++) s+=`<path d="M${fx+250+k*22},${B-196} L${fx+250+k*22},${B-130}" stroke="#D49A22" stroke-width="4"/>`;
+  s+=`<circle cx="${fx+300}" cy="${B-212}" r="16" fill="#3A3640" stroke="${OL}" stroke-width="3"/><circle cx="${fx+440}" cy="${B-212}" r="16" fill="#3A3640" stroke="${OL}" stroke-width="3"/>`;
+  s+=`<text x="${fx+190}" y="${B-138}" font-size="26" font-weight="800" fill="#2a2018">MF 1504</text>`;
+  // cab + nose
+  s+=`<path d="M${fx+14},${B-70} L${fx+14},${B-142} L${fx+56},${B-150} L${fx+70},${B-236} L${fx+156},${B-236} L${fx+156},${B-70}Z" fill="#F2B230" stroke="${OL}" stroke-width="5" stroke-linejoin="round"/>`;
+  s+=`<path d="M${fx+14},${B-118} L${fx+156},${B-118} L${fx+156},${B-100} L${fx+14},${B-100}Z" fill="#C8352E"/>`;
+  s+=`<path d="M${fx+62},${B-160} L${fx+74},${B-222} L${fx+96},${B-222} L${fx+90},${B-160}Z" fill="#9FD3E6" stroke="${OL}" stroke-width="4"/><rect x="${fx+104}" y="${B-222}" width="40" height="52" rx="4" fill="#9FD3E6" stroke="${OL}" stroke-width="4"/>`;
+  s+=`<rect x="${fx+86}" y="${B-250}" width="34" height="14" rx="4" fill="#3A3640"/>`;
+  // handrail
+  s+=`<path d="M${fx+160},${B-92} L${fx+520},${B-92}" stroke="#E9E4D8" stroke-width="4"/>`; for(let k=0;k<6;k++) s+=`<path d="M${fx+170+k*68},${B-92} L${fx+170+k*68},${B-72}" stroke="#E9E4D8" stroke-width="4"/>`;
+  // lights
+  const on=o.lights; const dl=Math.floor(T*3)%2;
+  s+=`<circle cx="${fx+20}" cy="${B-128}" r="10" fill="${on?'#FFF7D6':'#E8E2C8'}" stroke="${OL}" stroke-width="3"/>`;
+  if(on) s+=`<circle cx="${fx+20}" cy="${B-128}" r="34" fill="#FFF3B0" opacity=".45"/>`;
+  s+=`<circle cx="${fx+18}" cy="${B-82}" r="6" fill="${on&&dl?'#FFF3B0':'#B9B19A'}"/>`;
+  if(o.brake) s+=sparks(fx+105,B-2,o.brake)+sparks(fx+185,B-2,o.brake)+sparks(fx+355,B-2,o.brake)+sparks(fx+435,B-2,o.brake);
+  return s; }
+function boxcar(x0,col,dist,brk){ const B=RAIL; let s='';
+  s+=`<rect x="${x0+30}" y="${B-46}" width="100" height="18" rx="4" fill="#3A3640"/><rect x="${x0+220}" y="${B-46}" width="100" height="18" rx="4" fill="#3A3640"/>`;
+  s+=wheelSet(x0+60,B-16,2,dist)+wheelSet(x0+250,B-16,2,dist);
+  s+=`<rect x="${x0+6}" y="${B-216}" width="338" height="166" rx="5" fill="${col}" stroke="${OL}" stroke-width="5"/>`;
+  for(let k=1;k<13;k++) if(k<5||k>8) s+=`<path d="M${x0+6+k*26},${B-212} L${x0+6+k*26},${B-54}" stroke="#000" stroke-opacity=".18" stroke-width="3"/>`;
+  s+=`<rect x="${x0+136}" y="${B-206}" width="80" height="148" fill="#000" fill-opacity=".14" stroke="${OL}" stroke-width="3"/><path d="M${x0+136},${B-206} L${x0+216},${B-58} M${x0+216},${B-206} L${x0+136},${B-58}" stroke="#000" stroke-opacity=".18" stroke-width="3"/>`;
+  s+=`<text x="${x0+70}" y="${B-180}" font-size="18" font-weight="800" fill="#fff" opacity=".7">MF RAIL</text>`;
+  s+=`<rect x="${x0-6}" y="${B-70}" width="16" height="10" fill="#2E2B33"/>`;
+  if(brk) s+=sparks(x0+60,B-2,brk)+sparks(x0+290,B-2,brk);
+  return s; }
+const BOXC=['#8E4B32','#3D7A8C','#6B6F3A','#A33A2E','#5B5F8C','#8E4B32','#3D7A8C','#A87A2E','#6B6F3A','#A33A2E'];
+function train(fx,o={}){ let s=''; const dist=-(fx); for(let i=0;i<10;i++) s+=boxcar(fx+536+i*350,BOXC[i],dist,i%3==0?o.brake:0); s+=loco(fx,dist,o); return s; }
+
+// ---------- debris ----------
+const DEB=[{k:'wheel',x:112,y:-18,vx:-420,vy:-240,sp:-760,gy:34},{k:'bumper',x:110,y:-40,vx:-360,vy:-360,sp:-420,gy:44},{k:'plate',x:40,y:-66,vx:-330,vy:-470,sp:-880,gy:52},{k:'hub',x:100,y:-12,vx:-470,vy:-160,sp:-1300,gy:22},{k:'mirror',x:124,y:-124,vx:-300,vy:-430,sp:620,gy:38},{k:'tail',x:104,y:-90,vx:-390,vy:-330,sp:900,gy:28},
+  ...Array.from({length:7},(_,i)=>({k:'glass',x:20+i*14,y:-150+i*4,vx:-(250+i*34),vy:-(260+(i%3)*90),sp:(i%2?1:-1)*(500+i*90),gy:26+i*5}))];
+function debPos(d,dt){ const G=980; const tl=(-d.vy+Math.sqrt(d.vy*d.vy+2*G*(d.gy-d.y)))/G;
+  if(dt<tl) return [d.x+d.vx*dt, d.y+d.vy*dt+0.5*G*dt*dt, d.sp*dt];
+  const xl=d.x+d.vx*tl, u=dt-tl; const sl=d.vx*0.45*0.5*(1-Math.exp(-u/0.5)); const b=Math.abs(Math.sin(u*9))*30*Math.exp(-u*4);
+  return [xl+sl, d.gy-b, d.sp*tl+d.sp*0.3*(1-Math.exp(-u/0.4))]; }
+function debPiece(k){ switch(k){
+  case 'wheel': return `<circle r="20" fill="#1E1C22" stroke="${OL}" stroke-width="3"/><circle r="9" fill="#9A96A0"/>`;
+  case 'hub': return `<circle r="12" fill="#C9CDD3" stroke="${OL}" stroke-width="3"/><circle r="4" fill="#77727E"/>`;
+  case 'bumper': return `<rect x="-60" y="-8" width="120" height="16" rx="7" fill="#3A3640" stroke="${OL}" stroke-width="3"/>`;
+  case 'plate': return `<rect x="-30" y="-12" width="60" height="24" rx="4" fill="#F4F1EC" stroke="${OL}" stroke-width="3"/><text y="7" text-anchor="middle" font-size="15" font-weight="800" fill="#2a2018">OOPS</text>`;
+  case 'mirror': return `<rect x="-14" y="-10" width="28" height="20" rx="6" fill="#2F8FB0" stroke="${OL}" stroke-width="3"/><rect x="-9" y="-6" width="18" height="12" rx="3" fill="#A9D8EA"/>`;
+  case 'tail': return `<rect x="-15" y="-11" width="30" height="22" rx="5" fill="#C8322B" stroke="${OL}" stroke-width="3"/>`;
+  default: return `<path d="M-8,-6 L9,-2 L-2,8Z" fill="#CFEAF5" stroke="#fff" stroke-width="2"/>`; } }
+function debris(cx,cy,dt,maxDt=99){ if(dt<=0) return ''; dt=Math.min(dt,maxDt); let s='';
+  DEB.forEach(d=>{ const [x,y,r]=debPos(d,dt); s+=`<g transform="translate(${cx+x},${cy+y}) rotate(${r})">${debPiece(d.k)}</g>`; });
+  return s; }
+function impactFX(x,y,dt){ if(dt<0||dt>0.5) return ''; const k=dt/0.5; let s=`<circle cx="${x}" cy="${y}" r="${40+k*200}" fill="#FFF3B0" opacity="${0.8*(1-k)}"/>`;
+  for(let i=0;i<10;i++){ const a=i/10*Math.PI*2, r0=30+k*60, r1=60+k*200; s+=`<path d="M${x+Math.cos(a)*r0},${y+Math.sin(a)*r0} L${x+Math.cos(a)*r1},${y+Math.sin(a)*r1}" stroke="#FFD36A" stroke-width="${8*(1-k)+1}" stroke-linecap="round"/>`; }
+  return s; }
+
+// ---------- hero ----------
+function heroAt(x,y,o){ const s=depthS(y); return person(heroO(Object.assign({x,y,s,mouth:envOf('hero')},o)),HERO); }
+function runPose(t,flip,sp=2.6){ const ph=(t*sp)%1, a=Math.sin(ph*Math.PI*2); return {walk:ph,armL:[ -10+a*45, 50],armR:[10-a*45,-50],lean:flip?-8:8,flip}; }
+
+// ---------- overlays ----------
+function timerW(sec,label,on){ const red=sec<=5; const k=red?(0.85+0.15*Math.sin(T*12)):1;
+  return `<g transform="translate(40,26)"><rect x="0" y="0" width="236" height="64" rx="14" fill="#2a2018" stroke="${red?'#FF6B5E':'#fff'}" stroke-width="3"/><text x="16" y="27" font-size="20" font-weight="800" fill="#F6C945">${label||'TRAIN IN'}</text><text x="16" y="55" font-size="28" font-weight="800" fill="${red?'#FF6B5E':'#fff'}" transform="scale(1,1)">0:${String(Math.max(0,Math.ceil(sec))).padStart(2,'0')}</text>
+  <g transform="translate(196,32)"><circle r="20" fill="none" stroke="#4a4038" stroke-width="6"/><path d="M0,-20 A20,20 0 ${sec/12>0.5?1:0},1 ${Math.sin(clamp(sec/12)*Math.PI*2)*20},${-Math.cos(clamp(sec/12)*Math.PI*2)*20}" fill="none" stroke="${red?'#FF6B5E':'#F6C945'}" stroke-width="6" stroke-linecap="round"/></g></g>`; }
+function poll(x,y,sc,st={}){ if(sc<=0.01) return ''; const fill=clamp(st.fill==null?1:st.fill); let s='';
+  s+=`<rect x="-270" y="-96" width="540" height="192" rx="22" fill="#fff" stroke="#2a2018" stroke-width="5"/><text x="0" y="-56" text-anchor="middle" font-size="30" font-weight="800" fill="#2a2018">WHICH WAY DO YOU RUN?</text>`;
+  const row=(yy,txt,pct,cross,ok)=>{ let r=`<rect x="-246" y="${yy-24}" width="492" height="48" rx="14" fill="#F1ECE6"/><rect x="-246" y="${yy-24}" width="${492*pct*fill}" height="48" rx="14" fill="${ok?'#3FB27F':cross?'#E5383B':'#F6C945'}" opacity="${ok||cross?0.9:0.75}"/><text x="-228" y="${yy+10}" font-size="26" font-weight="800" fill="#2a2018">${txt}</text><text x="232" y="${yy+10}" text-anchor="end" font-size="26" font-weight="800" fill="#2a2018">${Math.round(pct*100*fill)}%</text>`;
+    if(cross) r+=`<path d="M-240,${yy} L${-240+480*cross},${yy}" stroke="#2a2018" stroke-width="6" stroke-linecap="round"/>`;
+    if(ok) r+=`<g transform="translate(262,${yy-22}) scale(${ok})"><circle r="24" fill="#3FB27F" stroke="#fff" stroke-width="4"/><path d="M-11,0 L-3,8 L12,-8" stroke="#fff" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>`; return r; };
+  s+=row(-6,'AWAY FROM THE TRAIN',0.78,st.cross||0,0)+row(56,'TOWARD THE TRAIN',0.22,0,st.ok||0);
+  return `<g transform="translate(${x},${y}) scale(${sc})">${s}</g>`; }
+// top-down map (mini-map and the big pause diagram share it)
+const MX=wx=>(wx-540)*0.09, MY=wy=>(wy-488)*0.25;
+function topDown(o){ // returns content centred on the crossing at (0,0) in map units*sc
+  const sc=o.sc||1; let s='';
+  s+=`<rect x="-14" y="-200" width="28" height="400" fill="#6A676E"/>`;
+  s+=`<path d="M-400,-6 L400,-6 M-400,6 L400,6" stroke="#C2BFC6" stroke-width="3"/>`;
+  for(let x=-400;x<400;x+=10) s+=`<path d="M${x},-9 L${x},9" stroke="#8D7A68" stroke-width="2"/>`;
+  if(o.cone>0){ const L=230*o.cone; s+=`<path d="M${o.carX},0 L${o.carX-L},${-L*0.42} L${o.carX-L},${L*0.42}Z" fill="#E5383B" opacity=".35"/>`; }
+  if(o.train!=null){ const tx=o.train; s+=`<rect x="${tx}" y="-9" width="400" height="18" rx="4" fill="#F2B230" stroke="#2a2018" stroke-width="2"/><path d="M${tx},-9 L${tx-8},0 L${tx},9Z" fill="#F2B230"/>`; }
+  if(o.carX!=null) s+=`<g transform="translate(${o.carX},0) rotate(${o.carRot||0})"><rect x="-6" y="-10" width="12" height="20" rx="3" fill="#2F8FB0" stroke="#fff" stroke-width="2"/></g>`;
+  if(o.trail&&o.trail.length>1) s+=`<polyline points="${o.trail.map(p=>p.join(',')).join(' ')}" fill="none" stroke="${o.trailCol}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${o.dash?'6 5':'none'}"/>`;
+  if(o.hero) s+=`<circle cx="${o.hero[0]}" cy="${o.hero[1]}" r="6" fill="#E0693A" stroke="#fff" stroke-width="2.5"/>`;
+  return s; }
+function miniMap(o){ const W=250,H=170,X=800,Y=22; const sc=o.k==null?1:o.k; if(sc<=0.01) return '';
+  return `<g transform="translate(${X+W/2},${Y+H/2}) scale(${sc}) translate(${-W/2},${-H/2})"><rect width="${W}" height="${H}" rx="16" fill="#3E5A3A" stroke="#fff" stroke-width="4"/><clipPath id="mmc"><rect x="3" y="3" width="${W-6}" height="${H-6}" rx="14"/></clipPath><g clip-path="url(#mmc)"><rect width="${W}" height="${H}" fill="#7E9A5A"/><g transform="translate(${W/2},62)">${topDown(o)}</g></g><rect x="10" y="${H-34}" width="66" height="24" rx="8" fill="#2a2018"/><text x="43" y="${H-16}" text-anchor="middle" font-size="16" font-weight="800" fill="#fff">MAP</text></g>`; }
+// bad path trail / right path trail in map units
+function trailOf(K,t,t0){ const pts=[]; for(let u=t0;u<=t;u+=0.12){ const p=kpath(u,K); pts.push([MX(p[0]),MY(p[1])]); } const p=kpath(t,K); pts.push([MX(p[0]),MY(p[1])]); return pts; }
+function ignitionInset(t,a,b,crankK){ const k=popS(t,a)*(1-A(t,b-0.25,b)); if(k<=0.01) return ''; let s='';
+  const cyc=((t-a)*1.9)%1, turn=cyc<0.55?Math.sin(cyc/0.55*Math.PI)*42:0;
+  s+=`<circle r="118" fill="#2B2732" stroke="#fff" stroke-width="6"/><clipPath id="ign"><circle r="114"/></clipPath><g clip-path="url(#ign)">`;
+  s+=`<rect x="-120" y="-120" width="240" height="96" fill="#3A3542"/><path d="M-120,-24 Q0,-44 120,-24 L120,120 L-120,120Z" fill="#24212A"/>`;
+  s+=`<g transform="translate(-40,-74)"><circle r="40" fill="#1A181E" stroke="#4A4552" stroke-width="5"/><path d="M-26,8 A28,28 0 0,1 26,8" stroke="#77727E" stroke-width="4" fill="none"/><path d="M0,0 L22,-14" stroke="#E5383B" stroke-width="4"/></g>`;
+  const bl=Math.floor(T*4)%2; s+=`<rect x="22" y="-100" width="26" height="18" rx="4" fill="${bl?'#E5383B':'#5A1E1E'}"/><rect x="56" y="-100" width="26" height="18" rx="4" fill="${bl?'#5A1E1E':'#FFB12A'}"/>`;
+  s+=`<path d="M-120,40 Q-60,0 10,20" stroke="#2E2A34" stroke-width="40" fill="none" stroke-linecap="round"/>`;
+  s+=`<g transform="translate(30,30)"><circle r="26" fill="#1A181E" stroke="#77727E" stroke-width="5"/><g transform="rotate(${turn})"><rect x="-6" y="-38" width="12" height="40" rx="4" fill="#C9CDD3" stroke="${OL}" stroke-width="3"/><rect x="-20" y="-58" width="40" height="26" rx="10" fill="#3A3640" stroke="${OL}" stroke-width="3"/>
+    <g transform="translate(0,-40)"><ellipse cx="10" cy="-6" rx="34" ry="24" fill="${HERO.skin}" stroke="${OL}" stroke-width="4"/><path d="M-18,-14 q-8,10 0,20 M30,-20 q10,10 2,22" stroke="${OL}" stroke-width="3" fill="none"/><rect x="20" y="-34" width="60" height="38" rx="14" fill="${HERO.top}" stroke="${OL}" stroke-width="4"/></g></g></g>`;
+  s+=`</g><g transform="translate(0,-132)"><rect x="-74" y="-18" width="148" height="34" rx="12" fill="#2a2018" stroke="#fff" stroke-width="3"/><text y="7" text-anchor="middle" font-size="20" font-weight="800" fill="#F6C945">IGNITION</text></g>`;
+  if(cyc<0.55&&crankK) s+=`<text x="60" y="-30" font-size="22" font-weight="800" fill="#fff" stroke="#000" stroke-width="5" paint-order="stroke" transform="rotate(-8)">rrr-rrr...</text>`;
+  return `<g transform="translate(830,236) scale(${k})">${s}</g>`; }
+function arrowLbl(x,y,txt,sc,col='#F6C945',down=true){ if(sc<=0.01) return ''; return `<g transform="translate(${x},${y}) scale(${sc})"><rect x="${-txt.length*10-18}" y="-62" width="${txt.length*20+36}" height="44" rx="14" fill="${col}" stroke="#2a2018" stroke-width="4"/><text y="-31" text-anchor="middle" font-size="28" font-weight="800" fill="#2a2018">${txt}</text><path d="M-14,-18 L14,-18 L0,0Z" fill="${col}" stroke="#2a2018" stroke-width="4" stroke-linejoin="round"/></g>`; }
+
+// ---------- BAD PATH ----------
+const KB=()=>{ const o=OUT1(); return [[o+0.25,[396,486]],[o+0.55,[352,500]],[o+1.0,[296,504]],[o+6,[296-130*5,504]]]; };
+function heroBad(t){ const o=OUT1(); const K=KB(); if(t<o+0.25) return null; let p=kpath(t,K); if(t>o+1.0) p=[296-132*(t-o-1.0),504]; return p; }
+function badPath(t){
+  let panel='', over='', shake=0;
+  const I=IMP1(), o=OUT1(), w1=P_('n1.1'), h1=CLIP('h1').start, n2=P_('n2.0');
+  const tx=trainX1(t), dt=t-I;
+  panel+=bgScene();
+  panel+=signal(360,FRAIL-12,0.8,true,{gate:300});
+  // car
+  const door=t<o?0:E(t,o,o+0.3);
+  const crank=t>=h1&&t<n2+0.2; const cyc=((t-h1)*1.9)%1; const csh=crank&&cyc<0.55?Math.sin(t*70)*2.5:0;
+  let carSvg='';
+  if(dt<0) carSvg=carRear(CARX,CARY,{id:1,door,head:t<o+0.2,hx:t<o?Math.sin(t*3)*3+csh*0.6:-14*E(t,o,o+0.2),hy:csh,shake:csh,hazard:true,exhaust:crank&&cyc<0.55});
+  else { const c=carAfter(dt); carSvg=carRear(c.x,c.y,{id:1,door:1,rot:c.rot,crush:c.crush,noBumper:true,noPlate:true,noTailR:true,noWheelR:dt>0.05,smoke:clamp(dt)}); }
+  panel+=carSvg;
+  panel+=debris(CARX,CARY,dt);
+  panel+=train(tx,{lights:true,beam:0.35,brake:t>w1+0.3?1:0});
+  panel+=impactFX(CARX+110,CARY-90,dt);
+  panel+=signal(790,RAIL+70,1.0,true,{ens:true});
+  // hero
+  const hp=heroBad(t);
+  if(hp){ const run=t>o+0.5; const rp=run?runPose(t,true,2.7):{}; const look=t>I-0.3;
+    panel+=heroAt(hp[0],hp[1],Object.assign({face:look?'scared':'panic',lookX:look?8:-6,sweat:1},rp, t<o+0.55?{armL:[-60,40],armR:[60,-40],flip:true}:{}, look&&run?{lookX:-8}:{} )); }
+  // camera
+  let cam;
+  if(t<2.9) cam={s:kval(t,[[0,0.36],[0.9,0.4],[2.9,1.22]]),x:kval(t,[[0,1300],[0.9,1250],[2.9,560]]),y:kval(t,[[0,360],[2.9,392]])};
+  else if(t<o) cam={s:kval(t,[[2.9,1.22],[h1,1.32],[o,1.18]]),x:kval(t,[[2.9,560],[h1,548],[o,520]]),y:kval(t,[[2.9,392],[h1,392],[o,400]])};
+  else { const hx=hp?hp[0]:396; cam={s:kval(t,[[o,1.18],[o+1.2,0.98],[I,0.9],[I+1.2,0.84]]),x:kval(t,[[o,520],[o+1.2,440],[I,mix(hx,620,0.55)],[I+1.3,mix(hx,380,0.62)]]),y:kval(t,[[o,400],[o+1.2,420],[I,420],[I+1.3,410]])}; }
+  if(dt>=0&&dt<0.7) shake=mix(12,0,dt/0.7);
+  const sx=wx=>540+(wx-cam.x)*cam.s, sy=wy=>304+(wy-cam.y)*cam.s;
+  // overlays
+  if(t<2.7){ const k=popS(t,0.15)*(1-A(t,2.4,2.7)); over+=arrowLbl(sx(CARX),sy(CARY-200),'YOUR CAR',k*0.9); over+=arrowLbl(clamp(sx(tx+150),200,980),sy(RAIL-270),'TRAIN',popS(t,0.45)*(1-A(t,2.4,2.7))*0.9,'#E5383B'); }
+  if(t<w1) over+=badge(560,560,'STUCK ON THE TRACKS',{sc:popS(t,0.05),bg:'#E5383B',fg:'#fff',fs:34,rot:-2});
+  // poll: big from "Which way", then shrinks to the corner
+  const pa=P_('n1.1');
+  if(t>=pa){ const k=A(t,h1+0.9,h1+1.5); over+=poll(mix(560,166,k),mix(445,152,k),mix(1,0.42,k)*popS(t,pa),{fill:A(t,pa+0.2,pa+1.2),cross:0}); }
+  over+=ignitionInset(t,h1-0.05,o-0.1,true);
+  if(t>=n2&&t<o) over+=badge(560,560,'10 SECONDS ON THE KEY',{sc:popS(t,n2+0.1),bg:'#fff',fs:32});
+  if(t>=o&&t<I) over+=badge(560,560,'RUN... ALONG THE TRACKS?',{sc:popS(t,o+0.25),bg:'#fff',fs:32,rot:1});
+  if(t>=I) over+=badge(560,560,'BAD MOVE',{sc:popS(t,I+0.05),bg:'#E5383B',fg:'#fff',fs:46,rot:-3});
+  over+=timerW(Math.max(0,I-t),'TRAIN IN',true);
+  // mini-map while he runs
+  if(t>=o-0.2){ const K=KB(); const mk=popS(t,o-0.2); const hm=hp?[MX(hp[0]),MY(hp[1])]:[0,0];
+    const tr=hp?[[MX(396),MY(486)],...trailOf([[o+0.25,[396,486]],[o+1.0,[296,504]],[o+1.0+6,[296-132*6,504]]],t,o+0.25)]:[];
+    const c=dt>0?carAfter(dt):{x:CARX,rot:0};
+    over+=miniMap({k:mk,train:MX(tx),carX:MX(c.x),carRot:0,hero:hp?hm:null,trail:tr,trailCol:'#E5383B',cone:dt>0?clamp(dt/0.8):0}); }
+  return {panel,over,cam,shake};
+}
+
+// ---------- PAUSE DIAGRAM ----------
+function pauseDiagram(t){ const wn=P_('m1.1'), rw=P_('m1.3'), wr=P_('m1.2'), pf=wn+(PE('m1.1')-wn)*0.3, sw=wn+(PE('m1.1')-wn)*0.62; let s='';
+  const k0=A(t,wn-0.4,wn);
+  s+=`<g opacity="${k0}"><rect x="352" y="70" width="700" height="470" rx="24" fill="#7E9A5A" stroke="#fff" stroke-width="5"/><text x="702" y="112" text-anchor="middle" font-size="28" font-weight="800" fill="#fff" stroke="#2a2018" stroke-width="6" paint-order="stroke">FROM ABOVE</text>`;
+  const sc=2.2; const tr=mix(260,30,E(t,wn,wn+0.9)); const carX=t<wn+0.9?0:-mix(0,40,E(t,wn+0.9,wn+1.6));
+  const cone=E(t,pf,pf+1.0);
+  let hero=null, trail=null; if(t>=wr){ const k=E(t,wr,wr+0.9); hero=[mix(-14,-150,k),14]; trail=[[-14,14],hero]; }
+  s+=`<clipPath id="pdc"><rect x="355" y="73" width="694" height="464" rx="22"/></clipPath><g clip-path="url(#pdc)"><g transform="translate(720,320) scale(${sc})">${topDown({train:tr,carX,cone,hero,trail,trailCol:'#E5383B'})}</g></g>`;
+  // debris dots flying in the cone
+  if(cone>0) for(let i=0;i<8;i++){ const p=((t-pf)*0.9+i/8)%1; const a=(i%5-2)*0.16; s+=`<circle cx="${720+carX*sc-p*480*cone}" cy="${320+Math.sin(a)*p*480*cone}" r="7" fill="#E5383B" stroke="#fff" stroke-width="2" opacity="${(1-p)*cone}"/>`; }
+  if(t>=wn+0.85&&t<wn+1.3){ const k=(t-wn-0.85)/0.45; s+=`<circle cx="${720+4*sc}" cy="320" r="${20+k*60}" fill="#FFF3B0" opacity="${0.8*(1-k)}"/>`; }
+  if(t>=pf) s+=badge(520,200,'PIECES FLY',{sc:popS(t,pf+0.1),fs:28,bg:'#E5383B',fg:'#fff'});
+  if(t>=sw){ const k=popS(t,sw); s+=`<g opacity="${clamp(k)}"><path d="M1010,262 L860,262" stroke="#F6C945" stroke-width="10" stroke-linecap="round"/><path d="M880,244 L852,262 L880,280" stroke="#F6C945" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>`+badge(930,215,'SAME WAY',{sc:k,fs:26,bg:'#F6C945'}); }
+  if(hero){ const hx=720+hero[0]*sc, hy=320+hero[1]*sc; s+=badge(hx,hy+56,'YOU',{sc:popS(t,wr+0.1),fs:24,bg:'#fff'}); s+=stampX(hx,hy,30,popS(t,wr+0.8)); }
+  s+=`</g>`;
+  // the poll answer
+  if(t>=wr+0.3) s+=poll(702,470,0.55*popS(t,wr+0.3),{cross:A(t,wr+0.5,wr+0.9)});
+  return s; }
+
+// ---------- RIGHT MOVE ----------
+const KR=()=>{ const o=OUT2(); return [[o+0.25,[396,486]],[o+0.6,[384,500]],[o+1.0,[452,524]],[o+2.0,[592,570]],[o+3.0,[730,612]],[o+3.75,[830,640]]]; };
+function rightMove(t){
+  let panel='', over='', shake=0;
+  const I=IMP2(), o=OUT2(), a0=P_('n4.0'), a1=P_('n4.1'), a2=P_('n4.2'), hS=CLIP('h2').start, h21=P_('h2.1'), h23=P_('h2.3');
+  const tx=trainX2(t), dt=t-I;
+  panel+=bgScene();
+  panel+=signal(360,FRAIL-12,0.8,true,{gate:300});
+  // ground arrow: 45 degrees toward the train, away from the tracks
+  const ga=E(t,a1-0.1,a1+0.9)*(1-A(t,hS+1.5,hS+2.2));
+  if(ga>0){ const p0=[392,512], p1=[870,664]; const pe=lerp2(p0,p1,ga); panel+=`<path d="M${p0[0]},${p0[1]} L${pe[0]},${pe[1]}" stroke="#3FB27F" stroke-width="18" stroke-linecap="round" stroke-dasharray="34 22" opacity=".85"/>`;
+    if(ga>0.95) panel+=`<path d="M${p1[0]-40},${p1[1]-34} L${p1[0]+6},${p1[1]+2} L${p1[0]-52},${p1[1]+14}" fill="none" stroke="#3FB27F" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>`; }
+  const door=t<o?0:E(t,o,o+0.25);
+  let carSvg='';
+  if(dt<0) carSvg=carRear(CARX,CARY,{id:2,door,head:t<o+0.15,hx:t<a0+0.9?Math.sin(t*3)*2:-14*E(t,o-0.1,o+0.15),hazard:true});
+  else { const c=carAfter(dt); carSvg=carRear(c.x,c.y,{id:2,door:1,rot:c.rot,crush:c.crush,noBumper:true,noPlate:true,noTailR:true,noWheelR:dt>0.05,smoke:clamp(dt)}); }
+  panel+=carSvg;
+  panel+=debris(CARX,CARY,dt,2.2);
+  panel+=train(tx,{lights:true,beam:0.35,brake:t>a0+0.5?1:0});
+  panel+=impactFX(CARX+110,CARY-90,dt);
+  panel+=signal(790,RAIL+70,1.0,true,{ens:true});
+  // hero
+  let hp=null, ho={};
+  if(t>=o+0.25){ hp=kpath(t,KR()); const run=t>=o+0.6&&t<o+3.7;
+    if(run) ho=Object.assign({face:'panic',sweat:1},runPose(t,false,2.8));
+    else if(t<o+0.6) ho={face:'panic',armL:[-50,30],armR:[50,-30]};
+    else if(t<I-0.15) ho={face:'scared',lookX:-8,flip:false,armL:[-30,40],armR:[30,-40]};
+    else if(t<I+1.3) ho={face:'scared',lookX:-8,armL:[-150,-20],armR:[150,20],lean:-4,shake:dt<0.6?1:0};
+    else if(t<h21) ho={face:t>P_('h2.1')-0.6?'sheepish':'shock',lookX:-8,lookY:2,armL:[-14,-8],armR:[14,8],mouth:envOf('hero')};
+    else ho={face:t<h23-0.1?'shock':'happy',lookX:0,armL:[-150,-20],armR:[150,20],mouth:envOf('hero')};
+    panel+=heroAt(hp[0],hp[1],ho); }
+  // camera
+  let cam;
+  if(t<o-0.2) cam={s:kval(t,[[a0,1.26],[o-0.2,1.18]]),x:kval(t,[[a0,560],[o-0.2,540]]),y:kval(t,[[a0,392],[o-0.2,400]])};
+  else if(t<I) cam={s:kval(t,[[o-0.2,1.18],[o+1.0,1.0],[I,0.9]]),x:kval(t,[[o-0.2,540],[o+1.0,560],[I,660]]),y:kval(t,[[o-0.2,400],[o+1.0,430],[I,466]])};
+  else cam={s:kval(t,[[I,0.9],[I+1.0,0.84],[hS+0.5,0.92]]),x:kval(t,[[I,660],[I+1.0,600],[hS+0.5,620]]),y:kval(t,[[I,466],[hS+0.5,462]])};
+  if(dt>=0&&dt<0.6) shake=mix(9,0,dt/0.6);
+  const sx=wx=>540+(wx-cam.x)*cam.s, sy=wy=>304+(wy-cam.y)*cam.s;
+  if(t<o) over+=badge(600,560,'FORGET THE KEY',{sc:popS(t,a0+0.9),bg:'#3FB27F',fg:'#fff',fs:34});
+  else if(t<a1) over+=badge(600,560,'GET OUT. NOW.',{sc:popS(t,o),bg:'#3FB27F',fg:'#fff',fs:38,rot:-2});
+  else if(t<I) over+=badge(620,560,'TOWARD THE TRAIN, AT AN ANGLE',{sc:popS(t,a1+0.1),bg:'#3FB27F',fg:'#fff',fs:28});
+  else if(t<hS+0.3) over+=badge(560,560,'PIECES FLY THIS WAY',{sc:popS(t,I+0.1),bg:'#E5383B',fg:'#fff',fs:32});
+  else if(t>=h23-0.1) over+=badge(640,560,'SAFE',{sc:popS(t,h23),bg:'#3FB27F',fg:'#fff',fs:46,rot:-3});
+  if(t>=I&&t<hS+0.3){ const k=popS(t,I+0.1); over+=`<g transform="translate(${sx(CARX)-40},${sy(CARY-60)}) scale(${k})"><path d="M0,0 L-150,0" stroke="#E5383B" stroke-width="14" stroke-linecap="round"/><path d="M-120,-26 L-156,0 L-120,26" fill="none" stroke="#E5383B" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/></g>`; }
+  // 45° label near the start of the arrow
+  if(ga>0.5&&t<hS) { const k=popS(t,a2); over+=`<g transform="translate(${sx(470)},${sy(486)}) scale(${k})"><path d="M0,0 L70,0 M0,0 L60,20" stroke="#fff" stroke-width="5"/><path d="M48,0 A48,48 0 0,1 45,15" stroke="#F6C945" stroke-width="5" fill="none"/><text x="78" y="20" font-size="30" font-weight="800" fill="#fff" stroke="#000" stroke-width="6" paint-order="stroke">45°</text></g>`; }
+  if(t<hS+0.3) over+=timerW(Math.max(0,I-t),'TRAIN IN',true);
+  over+=poll(166,152,0.42,{fill:1,cross:1,ok:popS(t,a1+0.6)});
+  // mini-map: green path at 45°
+  const c=dt>0?carAfter(dt):{x:CARX}; const hm=hp?[MX(hp[0]),MY(hp[1])]:null;
+  const tr=hp?trailOf(KR(),Math.min(t,o+3.75),o+0.25):null;
+  over+=miniMap({k:1-A(t,hS+1.2,hS+1.6),train:MX(tx),carX:MX(c.x),hero:hm,trail:tr,trailCol:'#3FB27F',cone:dt>0?clamp(dt/0.8):0});
+  return {panel,over,cam,shake};
+}
+// ---------- PUNCHLINE ----------
+function punch(t){ let panel='', over='';
+  const p0=CLIP('m2').start, b1=P_('m2.1'), be=PE('m2.1');
+  panel+=bgScene();
+  panel+=signal(360,FRAIL-12,0.8,true,{gate:300});
+  panel+=train(-1600,{lights:false,beam:0});
+  // the wreck on its side with a bit of smoke
+  panel+=carRear(300,CARY+26,{id:3,rot:-92,crush:1,noBumper:true,noPlate:true,noTailR:true,noWheelR:true,smoke:0.6,door:0.6});
+  // the bumper leans on the signal; the hubcap rolls in on "car"
+  const hub=t<be-0.6?null:[mix(150,420,E(t,be-0.6,be+0.3)),CARY+58-Math.abs(Math.sin((t-be+0.6)*10))*12*(1-A(t,be-0.6,be+0.5))];
+  panel+=`<g transform="translate(470,${CARY+60}) rotate(-8)">${debPiece('bumper')}</g><g transform="translate(560,${CARY+54}) rotate(24)">${debPiece('plate')}</g>`;
+  if(hub) panel+=`<g transform="translate(${hub[0]},${hub[1]}) rotate(${hub[0]*3})">${debPiece('hub')}</g>`;
+  panel+=signal(790,RAIL+70,1.0,true,{ens:true});
+  // hero: thumbs up, then his phone buzzes
+  const ph=t>=b1-0.1; const hx=760, hy=640;
+  const ho={face:t<b1?'happy':(t<b1+0.9?'shock':'sheepish'),lookX:t<b1?0:-4,lookY:t<b1?0:6,mouth:0};
+  if(!ph){ ho.armR=[150,20]; ho.armL=[-14,-8]; }
+  else { ho.armL=[-150,-60]; ho.armR=[14,8]; ho.holdL=(x,y)=>`<g transform="translate(${x+6},${y-14}) rotate(-12)"><rect x="-13" y="-22" width="26" height="44" rx="5" fill="#2a2730" stroke="${OL}" stroke-width="3"/><rect x="-10" y="-18" width="20" height="34" rx="3" fill="${Math.floor(T*6)%2?'#9FD3E6':'#F6C945'}"/></g>`; }
+  panel+=heroAt(hx,hy,ho);
+  const cam={s:kval(t,[[p0,0.98],[b1,0.98],[be+0.5,1.04]]),x:kval(t,[[p0,640],[be+0.5,650]]),y:462};
+  if(t<b1) over+=badge(640,560,'GOOD NEWS: YOU\'RE FINE',{sc:popS(t,p0+0.05),fs:32,bg:'#3FB27F',fg:'#fff'});
+  else over+=badge(640,560,'BAD NEWS...',{sc:popS(t,b1+0.05),fs:36,bg:'#E5383B',fg:'#fff',rot:-2});
+  // phone notification card
+  const k=popS(t,b1+0.25); if(k>0){ let c=`<rect x="-200" y="-74" width="400" height="148" rx="24" fill="#FFFFFF" stroke="#2a2018" stroke-width="5"/><rect x="-176" y="-50" width="48" height="48" rx="12" fill="#E5383B"/><text x="-152" y="-15" text-anchor="middle" font-size="30" font-weight="800" fill="#fff">$</text><text x="-112" y="-32" font-size="20" font-weight="800" fill="#8a8078">BANK · now</text><text x="-112" y="-4" font-size="28" font-weight="800" fill="#2a2018">CAR PAYMENT DUE</text><text x="-176" y="46" font-size="26" font-weight="800" fill="#E5383B">47 MONTHS LEFT</text>`;
+    const st=popS(t,be-0.2); if(st>0) c+=`<g transform="translate(130,40) scale(${st}) rotate(-10)"><rect x="-70" y="-22" width="140" height="44" rx="8" fill="none" stroke="#E5383B" stroke-width="5"/><text y="10" text-anchor="middle" font-size="24" font-weight="800" fill="#E5383B">NO CAR</text></g>`;
+    over+=`<g transform="translate(${mix(1300,800,E(t,b1+0.25,b1+0.6))},150) scale(${0.9}) rotate(2)">${c}</g>`; }
+  return {panel,over,cam}; }
+// ---------- TIP ----------
+function tipIcon(kind){ let s='';
+  if(kind==='door') s=`<rect x="-22" y="-30" width="36" height="60" fill="none" stroke="#fff" stroke-width="6"/><path d="M14,-30 L30,-22 L30,38 L14,30" fill="#fff"/><circle cx="8" cy="2" r="3" fill="#fff"/>`;
+  if(kind==='angle') s=`<path d="M-36,-14 L36,-14 M-36,-4 L36,-4" stroke="#fff" stroke-width="5"/><path d="M-6,0 L26,30" stroke="#fff" stroke-width="7" stroke-linecap="round"/><path d="M14,30 L28,32 L26,18" stroke="#fff" stroke-width="6" fill="none" stroke-linecap="round"/><rect x="18" y="-26" width="24" height="10" fill="#fff"/>`;
+  if(kind==='train') s=`<rect x="-36" y="-26" width="50" height="40" rx="6" fill="#fff"/><rect x="14" y="-16" width="24" height="30" rx="4" fill="#fff"/><circle cx="-22" cy="20" r="7" fill="#fff"/><circle cx="2" cy="20" r="7" fill="#fff"/><circle cx="26" cy="20" r="7" fill="#fff"/><rect x="-30" y="-20" width="16" height="12" fill="#3FB27F"/>`;
+  if(kind==='sign') s=`<rect x="-36" y="-24" width="72" height="44" rx="5" fill="#1F5FBF" stroke="#fff" stroke-width="4"/><path d="M-24,-10 L24,-10 M-24,0 L16,0 M-24,10 L20,10" stroke="#fff" stroke-width="4"/>`;
+  if(kind==='phone') s=`<rect x="-16" y="-30" width="32" height="60" rx="6" fill="none" stroke="#fff" stroke-width="6"/><circle cx="0" cy="20" r="3.5" fill="#fff"/>`;
+  return s; }
+function tip(t){ let over='';
+  const r0=P_('m3.0'), q=P_('m3.1'), go=P_('m3.2'), rn=P_('m3.3'), an=P_('m3.4'), mi=P_('m3.5'), cl=P_('m3.6');
+  if(t<q+0.1) over+=badge(660,300,'REMEMBER',{sc:popS(t,r0),fs:56,bg:'#F6C945',rot:-3});
+  if(t>=q) over+=badge(670,64,'CAR STUCK ON THE TRACKS?',{sc:popS(t,q),fs:30,bg:'#fff'});
+  const tile=(x,y,ts,ic,l1,l2,bgc,hl)=>{ if(t<ts) return ''; const k=popS(t,ts)*(hl?1.06:1); return `<g transform="translate(${x},${y}) scale(${k})"><rect x="-176" y="-80" width="352" height="160" rx="20" fill="${bgc}" stroke="${hl?'#F6C945':'#fff'}" stroke-width="${hl?8:5}"/><g transform="translate(-112,0) scale(1.35)">${tipIcon(ic)}</g><text x="44" y="${l2?-8:12}" text-anchor="middle" font-size="27" font-weight="800" fill="#fff">${l1}</text>${l2?`<text x="44" y="28" text-anchor="middle" font-size="27" font-weight="800" fill="#fff">${l2}</text>`:''}</g>`; };
+  over+=tile(500,200,go,'door','GET','EVERYONE OUT','#3FB27F',t>=go&&t<rn);
+  over+=tile(870,200,rn,'angle',t>=an?'TOWARD TRAIN,':'TOWARD THE','AT AN ANGLE','#3FB27F',t>=rn&&t<mi);
+  over+=tile(500,380,mi,'train','1 MILE+','TO STOP','#E5383B',t>=mi&&t<cl);
+  over+=tile(870,380,cl,'sign','CALL THE','BLUE SIGN','#1F5FBF',t>=cl);
+  const ch=P_('m3.6')+(PE('m3.6')-P_('m3.6'))*0.68;
+  if(t>=ch) over+=`<g transform="translate(686,545) scale(${popS(t,ch)})"><g transform="translate(-150,0)">${tipIcon('phone')}</g>${badge(30,0,'OR CALL FOR HELP',{fs:30,bg:'#fff'})}</g>`;
+  if(t>=mi+0.3&&t<cl) over+=badge(500,486,'(1.6 KM)',{sc:popS(t,mi+0.3),fs:22,bg:'#fff'});
+  return over; }
+
+function scene(t){
+  let panel='', cam={s:1,x:540,y:304}, gray=false, over='', fine=null, shake=0, rot=0;
+  const M1=CLIP('m1'), N4=CLIP('n4'), M2=CLIP('m2'), M3=CLIP('m3'), M4=CLIP('m4');
+  const pauseAt=M1.start-0.15, rwEnd=N4.start-0.05, rwStart=rwEnd-1.0;
+  const FZ=PE('n2.2')+0.3;
+  if(t<pauseAt){ const tt=Math.min(t,FZ); const keep=T; if(t>FZ) T=FZ; const b=badPath(tt); T=keep; panel=b.panel; over=b.over; cam=b.cam; shake=t<FZ?b.shake:0;
+    if(t>=FZ) over+=`<rect width="1080" height="608" fill="#fff" opacity="${0.5*(1-A(t,FZ,FZ+0.25))}"/>`; }
+  else if(t<rwStart){
+    gray=true; const keep=T; T=FZ; const b=badPath(FZ); T=keep; panel=b.panel; cam=b.cam;
+    over+=`<g opacity="${A(t,pauseAt,pauseAt+0.2)}"><rect x="34" y="34" width="14" height="46" fill="#141218"/><rect x="58" y="34" width="14" height="46" fill="#141218"/><text x="88" y="70" font-size="30" font-weight="800" fill="#141218">PAUSED</text></g>`;
+    const wn=P_('m1.1'), wr=P_('m1.2'), rw=P_('m1.3');
+    if(t>=wn-0.4) over+=`<rect x="330" y="0" width="750" height="608" fill="#141218" opacity="${0.9*A(t,wn-0.4,wn)}"/>`;
+    over+=pauseDiagram(t);
+    const wi=A(t,pauseAt,pauseAt+0.9), fx=mix(-120,150,wi);
+    let o={x:fx,y:575,s:0.86,mouth:fineMouth(),walk:t<pauseAt+0.9?(t*2)%1:null,armL:[-8,2],armR:[40,60],handR:'remote',remoteAng:70,
+      emo:t<wn?'neutral':t<wr?'serious':t<rw?'worried':'neutral'};
+    if(t>=rw){o.armR=[70,50];o.press=t>rw+0.1&&t<rw+0.5}
+    fine=o;
+  }
+  else if(t<rwEnd){
+    const k=L(t,rwStart,rwEnd); const back=mix(FZ,0.5,Math.pow(k,0.8));
+    const keep=T; T=back; const b=badPath(back); T=keep;
+    panel=b.panel; cam=b.cam; gray=k<0.4;
+    over+=`<g><path d="M40,40 L60,58 L40,76Z M64,40 L84,58 L64,76Z" fill="#141218" transform="rotate(180,62,58)"/><text x="100" y="70" font-size="30" font-weight="800" fill="#141218">REWIND</text></g>`;
+    for(let i=0;i<5;i++){const yy=(i*137+t*900)%608;over+=`<rect x="0" y="${yy}" width="1080" height="${6+i%3*4}" fill="#fff" opacity=".25"/>`}
+    fine={x:150,y:575,s:0.86,armR:[70,50],handR:'remote',remoteAng:70,press:true,mouth:0,emo:'neutral'};
+  }
+  else if(t<M2.start){ const r=rightMove(t); panel=r.panel; over=r.over; cam=r.cam; shake=r.shake;
+    const a1=P_('n4.1'), I=IMP2(), hS=CLIP('h2').start, h23=P_('h2.3');
+    fine={x:150,y:575,s:0.86,mouth:fineMouth(),emo:t<a1?'serious':'neutral'};
+    if(t>=I-0.1&&t<I+0.9) fine.emo='shock';
+    if(t>=h23){ fine.mouth=0; fine.emo='happy'; fine.armR=[30,150]; fine.handR='thumb'; }
+  }
+  else if(t<M3.start){ const r=punch(t); panel=r.panel; over=r.over; cam=r.cam;
+    const b1=P_('m2.1');
+    let f={x:150,y:575,s:0.86,mouth:fineMouth(),emo:t<b1?'happy':'neutral'};
+    if(t<b1){ f.armR=[30,150]; f.handR='thumb'; }
+    f.wink=t>PE('m2.1')-0.45&&t<PE('m2.1')+0.25; if(t>=PE('m2.1')-0.5) f.emo='happy';
+    fine=f;
+  }
+  else if(t<M4.start){
+    panel+=bgScene(); panel+=signal(790,RAIL+70,1.0,true,{ens:true});
+    panel+=`<rect x="-3200" y="-1600" width="9200" height="4000" fill="#1b1622" opacity=".88"/>`;
+    over+=tip(t);
+    let o={x:150,y:575,s:0.95,mouth:fineMouth(),emo:'serious'};
+    if(t>=P_('m3.1')&&t<M4.start-0.3){o.armR=[120,-10];o.handR='point'}
+    fine=o; cam={s:0.9,x:700,y:400};
+  }
+  else {
+    const e0=M4.start-0.2;
+    panel+=`<rect x="0" y="0" width="1080" height="608" fill="url(#cardbg)"/>`;
+    panel+=`<g opacity="${A(t,e0,e0+0.3)}"><text x="740" y="230" text-anchor="middle" font-size="98" font-weight="800" fill="#1C1A20" letter-spacing="-2">MR FINE</text>
+      <text x="740" y="305" text-anchor="middle" font-size="46" font-weight="700" fill="#1f1b24" opacity="${A(t,e0+0.3,e0+0.6)}">Your car can wait.</text>
+      <g transform="translate(740,395) scale(${popS(t,P_('m4.1'))})"><text x="0" y="0" text-anchor="middle" font-size="60" font-weight="800" fill="#E86A90">YOUR LIFE CAN'T.</text></g></g>`;
+    const m=fineMouth();
+    fine={x:300,y:548,s:1.4,mouth:m,armR:t<P_('m4.1')?[150+Math.sin(t*14)*12,10]:[30,150],handR:t<P_('m4.1')?'':'thumb',wink:t>M4.start+M4.dur+0.4,emo:'neutral',smile:t>M4.start+M4.dur+0.3};
+    cam={s:1.0,x:540,y:304};
+    return {panel,cam,gray,over:mrFine(fine)+over,raw:true,shake,rot};
+  }
+  over=(fine?mrFine(fine):'')+over;
+  return {panel,cam,gray,over,shake,rot};
+}
+const DEFS2=`<defs><linearGradient id="sky15" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7FA9D6"/><stop offset=".55" stop-color="#C9D7E8"/><stop offset=".85" stop-color="#F6D2B0"/><stop offset="1" stop-color="#F7C69A"/></linearGradient>
+<linearGradient id="beam" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="#FFF3B0" stop-opacity=".9"/><stop offset="1" stop-color="#FFF3B0" stop-opacity="0"/></linearGradient></defs>`;
